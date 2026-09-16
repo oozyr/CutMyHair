@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "623131076737",
+    "project_id": "cutmyhair-chon",
+    "storage_bucket": "cutmyhair-chon.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:623131076737:android:51e3683e2f34e480184580",
+        "android_client_info": {
+          "package_name": "com.example.cutmyhair1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyChXTtkp8Rp9ZXAS0wiy0EVGPvcVIeiY4M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

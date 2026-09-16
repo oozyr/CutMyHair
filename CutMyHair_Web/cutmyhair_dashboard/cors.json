@@ -1,0 +1,25 @@
+[
+  {
+    "origin": [
+      "http://localhost:5000",
+      "http://localhost:61661",
+      "http://127.0.0.1:61661",
+      "https://cutmyhair-dashboard.web.app",
+      "https://cutmyhair-dashboard.firebaseapp.com",
+      "*"
+    ],
+    "method": [
+      "GET",
+      "HEAD",
+      "PUT",
+      "POST",
+      "DELETE"
+    ],
+    "maxAgeSeconds": 3600,
+    "responseHeader": [
+      "Content-Type",
+      "x-goog-resumable",
+      "Authorization"
+    ]
+  }
+]
