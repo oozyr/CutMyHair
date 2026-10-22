@@ -1,0 +1,63 @@
+{
+  "common": {
+    "appName": "CutMyHair",
+    "tagline": "Cari, tempah dan bayar tukang gunting anda",
+    "loading": "Memuatkan...",
+    "error": "Ada masalah. Sila cuba lagi.",
+    "retry": "Cuba lagi",
+    "cancel": "Batal",
+    "confirm": "Sahkan",
+    "save": "Simpan",
+    "back": "Kembali",
+    "next": "Seterusnya",
+    "done": "Selesai",
+    "close": "Tutup",
+    "search": "Cari",
+    "hello": "Hai"
+  },
+  "nav": {
+    "home": "Utama",
+    "bookings": "Tempahan",
+    "analytics": "Analitik",
+    "staff": "Kakitangan",
+    "profile": "Profil Kedai"
+  },
+  "auth": {
+    "login": "Log Masuk",
+    "logout": "Log Keluar",
+    "email": "Alamat emel",
+    "password": "Kata laluan",
+    "phone": "Nombor telefon",
+    "otp": "Masukkan kod pengesahan",
+    "continueWithGoogle": "Teruskan dengan Google"
+  },
+  "shop": {
+    "open": "Buka",
+    "closed": "Tutup",
+    "rating": "Penilaian",
+    "reviews": "Ulasan",
+    "services": "Perkhidmatan",
+    "barbers": "Tukang gunting",
+    "away": "{distance} km jauh"
+  },
+  "booking": {
+    "title": "Buat Tempahan",
+    "selectService": "Pilih perkhidmatan",
+    "selectBarber": "Pilih tukang gunting",
+    "selectTime": "Pilih slot masa",
+    "confirm": "Sahkan Tempahan",
+    "payAtShop": "Bayar di kedai",
+    "status": {
+      "pending": "Menunggu",
+      "confirmed": "Disahkan",
+      "checked_in": "Daftar masuk",
+      "completed": "Selesai",
+      "cancelled": "Dibatalkan"
+    }
+  },
+  "dashboard": {
+    "hello": "Papan Pemuka CutMyHair",
+    "welcome": "Selamat datang ke papan pemuka tukang gunting CutMyHair.",
+    "comingSoon": "Akan datang"
+  }
+}

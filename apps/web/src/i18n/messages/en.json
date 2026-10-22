@@ -1,0 +1,63 @@
+{
+  "common": {
+    "appName": "CutMyHair",
+    "tagline": "Find, book and pay your barber",
+    "loading": "Loading...",
+    "error": "Something went wrong. Please try again.",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "back": "Back",
+    "next": "Next",
+    "done": "Done",
+    "close": "Close",
+    "search": "Search",
+    "hello": "Hello"
+  },
+  "nav": {
+    "home": "Home",
+    "bookings": "Bookings",
+    "analytics": "Analytics",
+    "staff": "Staff",
+    "profile": "Store Profile"
+  },
+  "auth": {
+    "login": "Log In",
+    "logout": "Log Out",
+    "email": "Email address",
+    "password": "Password",
+    "phone": "Phone number",
+    "otp": "Enter verification code",
+    "continueWithGoogle": "Continue with Google"
+  },
+  "shop": {
+    "open": "Open",
+    "closed": "Closed",
+    "rating": "Rating",
+    "reviews": "Reviews",
+    "services": "Services",
+    "barbers": "Barbers",
+    "away": "{distance} km away"
+  },
+  "booking": {
+    "title": "Book Appointment",
+    "selectService": "Select a service",
+    "selectBarber": "Select a barber",
+    "selectTime": "Choose a time slot",
+    "confirm": "Confirm Booking",
+    "payAtShop": "Pay at shop",
+    "status": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "checked_in": "Checked in",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    }
+  },
+  "dashboard": {
+    "hello": "CutMyHair Dashboard",
+    "welcome": "Welcome to the CutMyHair barber dashboard.",
+    "comingSoon": "Coming soon"
+  }
+}

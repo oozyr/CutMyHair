@@ -1,0 +1,23 @@
+{
+  "name": "cutmyhair",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:api": "yarn workspace @cutmyhair/api run start:dev",
+    "dev:web": "yarn workspace @cutmyhair/web run dev",
+    "dev:mobile": "yarn workspace @cutmyhair/mobile run start",
+    "build": "turbo run build",
+    "lint": "turbo run lint"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0",
+    "typescript": "^5.4.5"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "yarn@1.22.22"
+}
