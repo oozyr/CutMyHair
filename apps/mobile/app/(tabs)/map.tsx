@@ -2,9 +2,11 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, typography, spacing } from '@/theme';
-import { t } from '@/i18n';
+import { useLanguage } from '@/i18n';
 
 export default function MapScreen() {
+  const { t } = useLanguage();
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>

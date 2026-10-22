@@ -10,6 +10,37 @@
     "inbox": "Peti Masuk",
     "profile": "Profil"
   },
+  "greetings": {
+    "morning": "Selamat pagi",
+    "afternoon": "Selamat tengah hari",
+    "evening": "Selamat petang"
+  },
+  "home": {
+    "subtitle": "Bersedia untuk potongan rambut kemas?",
+    "featuredShops": "Pilihan Barber",
+    "nearbyShops": "Berdekatan di Cheras",
+    "within10km": "Dalam 10 km",
+    "km": "km",
+    "loading": "Mencari kedai gunting berdekatan...",
+    "emptyTitle": "Tiada kedai ditemui",
+    "emptyMessage": "Tiada kedai gunting dalam lingkungan 10 km dari Cheras buat masa ini.",
+    "errorTitle": "Gagal memuatkan kedai",
+    "errorMessage": "Sila periksa sambungan internet atau pelayan API anda.",
+    "retry": "Cuba Lagi"
+  },
+  "profile": {
+    "title": "Profil",
+    "settings": "Tetapan",
+    "language": "Bahasa",
+    "english": "English",
+    "bahasaMalaysia": "Bahasa Malaysia",
+    "deviceLanguage": "Bahasa Peranti"
+  },
+  "shopDetail": {
+    "title": "Maklumat Kedai",
+    "placeholderNotice": "Profil penuh kedai dan tempahan akan datang.",
+    "back": "Kembali"
+  },
   "placeholders": {
     "homeTitle": "Utama",
     "homeSubtitle": "Cari dan tempah tukang gunting di Cheras",

@@ -10,6 +10,37 @@
     "inbox": "Inbox",
     "profile": "Profile"
   },
+  "greetings": {
+    "morning": "Good morning",
+    "afternoon": "Good afternoon",
+    "evening": "Good evening"
+  },
+  "home": {
+    "subtitle": "Ready for a fresh cut?",
+    "featuredShops": "Featured Barbers",
+    "nearbyShops": "Nearby in Cheras",
+    "within10km": "Within 10 km",
+    "km": "km",
+    "loading": "Finding nearby shops...",
+    "emptyTitle": "No shops found",
+    "emptyMessage": "There are no barbershops within 10 km of Cheras right now.",
+    "errorTitle": "Couldn't load shops",
+    "errorMessage": "Please check your network connection or API server.",
+    "retry": "Try Again"
+  },
+  "profile": {
+    "title": "Profile",
+    "settings": "Settings",
+    "language": "Language",
+    "english": "English",
+    "bahasaMalaysia": "Bahasa Malaysia",
+    "deviceLanguage": "Device Language"
+  },
+  "shopDetail": {
+    "title": "Shop Details",
+    "placeholderNotice": "Full shop profile and booking flow coming soon.",
+    "back": "Back"
+  },
   "placeholders": {
     "homeTitle": "Home",
     "homeSubtitle": "Find and book barbers in Cheras",
