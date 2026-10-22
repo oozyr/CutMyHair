@@ -3,6 +3,7 @@
   "compilerOptions": {
     "strict": true,
     "jsx": "react-native",
+    "moduleResolution": "bundler",
     "paths": {
       "@/*": ["./src/*"],
       "@cutmyhair/shared": ["../../packages/shared/dist/index.d.ts"]

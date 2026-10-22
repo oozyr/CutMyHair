@@ -30,7 +30,7 @@ export default function TabLayout() {
         options={{
           title: t('tabs.home'),
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home-outline" size={size} color={color} />
+            <Ionicons name="home-outline" size={size} color={color as string} />
           ),
         }}
       />
@@ -39,7 +39,7 @@ export default function TabLayout() {
         options={{
           title: t('tabs.map'),
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="map-outline" size={size} color={color} />
+            <Ionicons name="map-outline" size={size} color={color as string} />
           ),
         }}
       />
@@ -48,7 +48,7 @@ export default function TabLayout() {
         options={{
           title: t('tabs.cutmyhair'),
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="cut-outline" size={size} color={color} />
+            <Ionicons name="cut-outline" size={size} color={color as string} />
           ),
         }}
       />
@@ -57,7 +57,7 @@ export default function TabLayout() {
         options={{
           title: t('tabs.inbox'),
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="mail-outline" size={size} color={color} />
+            <Ionicons name="mail-outline" size={size} color={color as string} />
           ),
         }}
       />
@@ -66,7 +66,7 @@ export default function TabLayout() {
         options={{
           title: t('tabs.profile'),
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size} color={color} />
+            <Ionicons name="person-outline" size={size} color={color as string} />
           ),
         }}
       />
