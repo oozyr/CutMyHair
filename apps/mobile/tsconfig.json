@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "strict": true,
+    "jsx": "react-native",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@cutmyhair/shared": ["../../packages/shared/dist/index.d.ts"]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts"
+  ]
+}

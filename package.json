@@ -16,6 +16,9 @@
     "turbo": "^2.0.0",
     "typescript": "^5.4.5"
   },
+  "overrides": {
+    "react-native": "0.74.5"
+  },
   "engines": {
     "node": ">=20"
   },

@@ -1,0 +1,25 @@
+{
+  "common": {
+    "appName": "CutMyHair",
+    "tagline": "Cari, tempah dan bayar tukang gunting anda"
+  },
+  "tabs": {
+    "home": "Utama",
+    "map": "Peta",
+    "cutmyhair": "CutMyHair",
+    "inbox": "Peti Masuk",
+    "profile": "Profil"
+  },
+  "placeholders": {
+    "homeTitle": "Utama",
+    "homeSubtitle": "Cari dan tempah tukang gunting di Cheras",
+    "mapTitle": "Peta",
+    "mapSubtitle": "Terokai kedai gunting dalam 10km",
+    "cutmyhairTitle": "CutMyHair",
+    "cutmyhairSubtitle": "Daftar masuk QR dan Feeling Lucky",
+    "inboxTitle": "Peti Masuk",
+    "inboxSubtitle": "Tempahan dan peringatan",
+    "profileTitle": "Profil",
+    "profileSubtitle": "Akaun dan tetapan"
+  }
+}

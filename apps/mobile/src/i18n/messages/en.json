@@ -1,0 +1,25 @@
+{
+  "common": {
+    "appName": "CutMyHair",
+    "tagline": "Find, book and pay your barber"
+  },
+  "tabs": {
+    "home": "Home",
+    "map": "Map",
+    "cutmyhair": "CutMyHair",
+    "inbox": "Inbox",
+    "profile": "Profile"
+  },
+  "placeholders": {
+    "homeTitle": "Home",
+    "homeSubtitle": "Find and book barbers in Cheras",
+    "mapTitle": "Map",
+    "mapSubtitle": "Explore barbershops within 10km",
+    "cutmyhairTitle": "CutMyHair",
+    "cutmyhairSubtitle": "QR check-in and Feeling Lucky",
+    "inboxTitle": "Inbox",
+    "inboxSubtitle": "Bookings and reminders",
+    "profileTitle": "Profile",
+    "profileSubtitle": "Account and settings"
+  }
+}

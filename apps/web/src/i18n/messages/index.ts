@@ -1,2 +1,2 @@
-export { en } from './en.json';
-export { ms } from './ms.json';
+export { default as en } from './en.json';
+export { default as ms } from './ms.json';
