@@ -39,6 +39,25 @@
   "shopDetail": {
     "title": "Shop Details",
     "placeholderNotice": "Full shop profile and booking flow coming soon.",
+    "back": "Back",
+    "openNow": "Open Now",
+    "closed": "Closed",
+    "services": "Services",
+    "barbers": "Barbers",
+    "reviews": "Reviews",
+    "bookNow": "Book Now",
+    "noReviews": "No reviews yet",
+    "noPhotos": "No photos",
+    "loading": "Loading shop...",
+    "errorTitle": "Could not load shop",
+    "errorMessage": "Please check your connection and try again.",
+    "retry": "Try Again",
+    "notFound": "Shop not found",
+    "min": "min"
+  },
+  "booking": {
+    "comingSoon": "Booking coming soon",
+    "comingSoonMessage": "We're working hard on the booking experience. Stay tuned!",
     "back": "Back"
   },
   "placeholders": {

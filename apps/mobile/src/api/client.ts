@@ -8,7 +8,11 @@ import type {
   AvailabilitySlot,
 } from '@cutmyhair/shared';
 
-export type ShopWithDistance = Shop & { distanceKm?: number };
+export type ShopWithDistance = Shop & {
+  distanceKm?: number;
+  minPrice?: number | null;
+  maxPrice?: number | null;
+};
 
 export interface GetShopsParams {
   lat?: number;

@@ -39,6 +39,25 @@
   "shopDetail": {
     "title": "Maklumat Kedai",
     "placeholderNotice": "Profil penuh kedai dan tempahan akan datang.",
+    "back": "Kembali",
+    "openNow": "Buka Sekarang",
+    "closed": "Tutup",
+    "services": "Perkhidmatan",
+    "barbers": "Tukang Gunting",
+    "reviews": "Ulasan",
+    "bookNow": "Tempah Sekarang",
+    "noReviews": "Belum ada ulasan",
+    "noPhotos": "Tiada foto",
+    "loading": "Memuatkan kedai...",
+    "errorTitle": "Gagal memuatkan kedai",
+    "errorMessage": "Sila semak sambungan anda dan cuba lagi.",
+    "retry": "Cuba Lagi",
+    "notFound": "Kedai tidak dijumpai",
+    "min": "min"
+  },
+  "booking": {
+    "comingSoon": "Tempahan akan datang",
+    "comingSoonMessage": "Kami sedang giat membangunkan pengalaman tempahan. Nantikan!",
     "back": "Kembali"
   },
   "placeholders": {

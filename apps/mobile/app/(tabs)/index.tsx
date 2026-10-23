@@ -179,6 +179,11 @@ export default function HomeScreen() {
                         <Text style={styles.featuredAddress} numberOfLines={1}>
                           {shop.address}
                         </Text>
+                        {shop.minPrice != null && shop.maxPrice != null && (
+                          <Text style={styles.priceRangeText}>
+                            {`RM${shop.minPrice} - RM${shop.maxPrice}`}
+                          </Text>
+                        )}
                         {shop.distanceKm !== undefined && (
                           <View style={styles.distanceRow}>
                             <Ionicons
@@ -251,6 +256,11 @@ export default function HomeScreen() {
                         <Text style={styles.gridShopName} numberOfLines={2}>
                           {shop.name}
                         </Text>
+                        {shop.minPrice != null && shop.maxPrice != null && (
+                          <Text style={styles.gridPriceRangeText}>
+                            {`RM${shop.minPrice} - RM${shop.maxPrice}`}
+                          </Text>
+                        )}
                         {shop.distanceKm !== undefined && (
                           <View style={styles.distanceRow}>
                             <Ionicons
@@ -530,6 +540,18 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.regular,
     fontSize: typography.fontSize.xs,
     color: colors.accent,
+  },
+  priceRangeText: {
+    fontFamily: typography.fontFamily.bold,
+    fontSize: typography.fontSize.xs,
+    color: colors.accent,
+    marginBottom: spacing[1],
+  },
+  gridPriceRangeText: {
+    fontFamily: typography.fontFamily.bold,
+    fontSize: typography.fontSize.xs,
+    color: colors.accent,
+    marginBottom: 2,
   },
   emptyContainer: {
     paddingVertical: spacing[8],
