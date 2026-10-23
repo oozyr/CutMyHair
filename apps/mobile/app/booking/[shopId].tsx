@@ -62,11 +62,10 @@ function todayMYT(): string {
 }
 
 /** 0=Sunday…6=Saturday -> 'monday' etc. */
-function dayKey(date: Date): string {
-  const keys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-  // date is already a Date in local JS time; we need day-of-week for MYT
+function dayKey(date: Date): number {
+  // date is a local JS date; we need day-of-week in MYT
   const myt = new Date(date.getTime() + 8 * 60 * 60 * 1000);
-  return keys[myt.getUTCDay()];
+  return myt.getUTCDay();
 }
 
 /** Short display: "Mon 3 Nov" */
@@ -559,7 +558,7 @@ function Step2Barbers({
               <Text style={styles.barberName}>{t('booking.anyBarber')}</Text>
               <Text style={styles.barberDesc}>{t('booking.anyBarberDesc')}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+            <Ionicons name="chevron-forward" size={18} color={colors.textDisabled} />
           </TouchableOpacity>
         }
         renderItem={({ item }) => (
@@ -572,13 +571,13 @@ function Step2Barbers({
               <Image source={{ uri: item.photo }} style={styles.barberAvatar} />
             ) : (
               <View style={styles.barberAvatar}>
-                <Ionicons name="person" size={26} color={colors.textMuted} />
+                <Ionicons name="person" size={26} color={colors.textDisabled} />
               </View>
             )}
             <View style={styles.barberInfo}>
               <Text style={styles.barberName}>{item.name}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+            <Ionicons name="chevron-forward" size={18} color={colors.textDisabled} />
           </TouchableOpacity>
         )}
       />
@@ -820,7 +819,7 @@ const styles = StyleSheet.create({
   emptyText: {
     fontFamily: typography.fontFamily.regular,
     fontSize: typography.fontSize.sm,
-    color: colors.textMuted,
+    color: colors.textDisabled,
     textAlign: 'center',
     marginTop: spacing[2],
   },
@@ -853,7 +852,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
   },
   progressSegmentInactive: {
-    backgroundColor: colors.borderLight,
+    backgroundColor: colors.divider,
   },
 
   // Step header
@@ -884,7 +883,7 @@ const styles = StyleSheet.create({
   stepLabel: {
     fontFamily: typography.fontFamily.regular,
     fontSize: typography.fontSize.xs,
-    color: colors.textMuted,
+    color: colors.textDisabled,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
   },
@@ -1007,7 +1006,7 @@ const styles = StyleSheet.create({
     opacity: 0.38,
   },
   dateChipClosedText: {
-    color: colors.textMuted,
+    color: colors.textDisabled,
   },
   dateDayName: {
     fontFamily: typography.fontFamily.regular,
@@ -1077,7 +1076,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     paddingVertical: spacing[1],
     borderBottomWidth: 1,
-    borderBottomColor: colors.borderLight,
+    borderBottomColor: colors.divider,
   },
   summaryLabel: {
     fontFamily: typography.fontFamily.regular,
