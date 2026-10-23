@@ -8,6 +8,16 @@ import type {
   AvailabilitySlot,
 } from '@cutmyhair/shared';
 
+export interface AppNotification {
+  id: string;
+  customerId: string;
+  type: 'booking_made' | 'booking_cancelled' | 'booking_rescheduled';
+  bookingId: string;
+  message: string;
+  read: boolean;
+  createdAt: string;
+}
+
 export type ShopWithDistance = Shop & {
   distanceKm?: number;
   minPrice?: number | null;
@@ -110,5 +120,9 @@ export const api = {
 
   async getReviews(shopId: string): Promise<Review[]> {
     return request<Review[]>(`/shops/${shopId}/reviews`);
+  },
+
+  async getNotifications(customerId: string): Promise<AppNotification[]> {
+    return request<AppNotification[]>(`/notifications?customerId=${encodeURIComponent(customerId)}`);
   },
 };

@@ -6,10 +6,14 @@ import {
 import { StoreService } from '../store/store.service';
 import type { Booking, BookingStatus } from '@cutmyhair/shared';
 import { CreateBookingDto } from './dto/create-booking.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class BookingsService {
-  constructor(private readonly store: StoreService) {}
+  constructor(
+    private readonly store: StoreService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   create(dto: CreateBookingDto): Booking {
     const { customerId, shopId, barberId, serviceId, startTime } = dto;
@@ -65,6 +69,27 @@ export class BookingsService {
     };
 
     this.store.bookings.set(id, booking);
+
+    const shop = this.store.shops.get(shopId);
+    const shopName = shop?.name ?? shopId;
+    const dateStr = start.toLocaleDateString('en-MY', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      timeZone: 'Asia/Kuala_Lumpur',
+    });
+    const timeStr = start.toLocaleTimeString('en-MY', {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'Asia/Kuala_Lumpur',
+    });
+    this.notificationsService.add(
+      customerId,
+      'booking_made',
+      id,
+      `Booking confirmed at ${shopName} on ${dateStr} at ${timeStr}.`,
+    );
+
     return booking;
   }
 
@@ -91,6 +116,18 @@ export class BookingsService {
     const booking = this.findOne(id);
     const updated = { ...booking, status, updatedAt: new Date().toISOString() };
     this.store.bookings.set(id, updated);
+
+    if (status === 'cancelled') {
+      const shop = this.store.shops.get(booking.shopId);
+      const shopName = shop?.name ?? booking.shopId;
+      this.notificationsService.add(
+        booking.customerId,
+        'booking_cancelled',
+        id,
+        `Your booking at ${shopName} has been cancelled.`,
+      );
+    }
+
     return updated;
   }
 
@@ -128,6 +165,27 @@ export class BookingsService {
       updatedAt: new Date().toISOString(),
     };
     this.store.bookings.set(id, updated);
+
+    const shop = this.store.shops.get(booking.shopId);
+    const shopName = shop?.name ?? booking.shopId;
+    const dateStr = start.toLocaleDateString('en-MY', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      timeZone: 'Asia/Kuala_Lumpur',
+    });
+    const timeStr = start.toLocaleTimeString('en-MY', {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'Asia/Kuala_Lumpur',
+    });
+    this.notificationsService.add(
+      booking.customerId,
+      'booking_rescheduled',
+      id,
+      `Your booking at ${shopName} has been rescheduled to ${dateStr} at ${timeStr}.`,
+    );
+
     return updated;
   }
 
