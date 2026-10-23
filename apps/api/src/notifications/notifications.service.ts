@@ -50,4 +50,10 @@ export class NotificationsService {
     );
     this.store.set(customerId, updated);
   }
+
+  markAllRead(customerId: string): void {
+    const items = this.store.get(customerId) ?? [];
+    const updated = items.map((n) => ({ ...n, read: true }));
+    this.store.set(customerId, updated);
+  }
 }

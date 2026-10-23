@@ -3,9 +3,11 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography } from '@/theme';
 import { useLanguage } from '@/i18n';
+import { useNotifications } from '@/context/NotificationContext';
 
 export default function TabLayout() {
   const { t } = useLanguage();
+  const { unreadCount } = useNotifications();
 
   return (
     <Tabs
@@ -58,6 +60,13 @@ export default function TabLayout() {
         name="inbox"
         options={{
           title: t('tabs.inbox'),
+          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
+          tabBarBadgeStyle: {
+            backgroundColor: colors.accent,
+            color: colors.textInverse,
+            fontFamily: typography.fontFamily.bold,
+            fontSize: 10,
+          },
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="mail-outline" size={size} color={color as string} />
           ),

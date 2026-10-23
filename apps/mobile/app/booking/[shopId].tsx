@@ -175,7 +175,8 @@ function StepHeader({
 // Main screen
 // ---------------------------------------------------------------------------
 export default function BookingScreen() {
-  const { shopId } = useLocalSearchParams<{ shopId: string }>();
+  const params = useLocalSearchParams<{ id?: string; shopId?: string }>();
+  const shopId = params.shopId || params.id;
   const router = useRouter();
   const { t } = useLanguage();
 

@@ -28,7 +28,7 @@ function detectDeviceLocale(): Locale {
 interface LanguageContextValue {
   locale: Locale;
   setLocale: (newLocale: Locale) => Promise<void>;
-  t: (key: string) => string;
+  t: (key: string, params?: Record<string, string | number>) => string;
   isReady: boolean;
 }
 
@@ -39,7 +39,11 @@ const LanguageContext = createContext<LanguageContextValue>({
   isReady: false,
 });
 
-export function translate(key: string, locale: Locale): string {
+export function translate(
+  key: string,
+  locale: Locale,
+  params?: Record<string, string | number>,
+): string {
   const dict = messages[locale] || messages[defaultLocale];
   const parts = key.split('.');
 
@@ -52,14 +56,24 @@ export function translate(key: string, locale: Locale): string {
     }
   }
 
-  return typeof curr === 'string' ? curr : key;
+  let text = typeof curr === 'string' ? curr : key;
+  if (params) {
+    for (const [paramKey, paramVal] of Object.entries(params)) {
+      text = text.split(`{{${paramKey}}}`).join(String(paramVal));
+    }
+  }
+  return text;
 }
 
 // Fallback standalone t function using detected or default locale
 let currentStandaloneLocale: Locale = defaultLocale;
 
-export function t(key: string, locale?: Locale): string {
-  return translate(key, locale || currentStandaloneLocale);
+export function t(
+  key: string,
+  params?: Record<string, string | number>,
+  locale?: Locale,
+): string {
+  return translate(key, locale || currentStandaloneLocale, params);
 }
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
@@ -100,7 +114,8 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const tHook = (key: string) => translate(key, locale);
+  const tHook = (key: string, params?: Record<string, string | number>) =>
+    translate(key, locale, params);
 
   return (
     <LanguageContext.Provider

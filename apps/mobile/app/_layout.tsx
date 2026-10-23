@@ -3,6 +3,7 @@ import { SplashScreen, Stack } from 'expo-router';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import { LanguageProvider } from '@/i18n';
+import { NotificationProvider } from '@/context/NotificationContext';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -24,11 +25,13 @@ export default function RootLayout() {
 
   return (
     <LanguageProvider>
-      <StatusBar style="dark" />
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="shop/[id]" options={{ headerShown: false }} />
-      </Stack>
+      <NotificationProvider>
+        <StatusBar style="dark" />
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="shop/[id]" options={{ headerShown: false }} />
+        </Stack>
+      </NotificationProvider>
     </LanguageProvider>
   );
 }

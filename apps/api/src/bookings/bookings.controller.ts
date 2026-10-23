@@ -12,6 +12,7 @@ import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingStatusDto } from './dto/update-booking-status.dto';
 import { RescheduleBookingDto } from './dto/reschedule-booking.dto';
+import { CheckInDto } from './dto/check-in.dto';
 
 @Controller('bookings')
 export class BookingsController {
@@ -34,6 +35,16 @@ export class BookingsController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.bookingsService.findOne(id);
+  }
+
+  @Get(':id/check-in-code')
+  getCheckInCode(@Param('id') id: string) {
+    return this.bookingsService.getCheckInCode(id);
+  }
+
+  @Post(':id/check-in')
+  checkIn(@Param('id') id: string, @Body() dto: CheckInDto) {
+    return this.bookingsService.checkIn(id, dto.code);
   }
 
   @Patch(':id/status')

@@ -5,8 +5,8 @@ Core flow: open app, find barber, choose service and barber, pick time, book, ge
 
 - Home: greeting at top. Below it, one horizontally scrollable row of featured barbers (paid ads or top performing). Then a 2 column list of nearby barbershops.
 - Map: pins of barbershops within a set radius (default 10km). User can change location to view other areas.
-- CutMyHair: two sections, default QR.
-  - QR: scan at the shop to check in a booking.
+- CutMyHair: two sections, default My QR.
+  - My QR: shortcut to the check-in QR of the customer's nearest upcoming booking. The customer shows it at the shop and the shop scans it (barber dashboard, on phone or laptop). Empty state with a "find a barber" button if there is no upcoming booking. No in-app camera for customers.
   - Feeling Lucky: randomly opens a nearby barbershop.
 - Inbox: three sections. Upcoming bookings, Completed bookings, Notifications (booking made, reminder, cancelled, rescheduled).
 - Profile.
@@ -33,4 +33,6 @@ Fully working with seeded data (8 to 10 fake Cheras shops, several barbers and s
   - Base RM29/month: shop discoverable, bookings, reviews, 1 barber, pay at shop only. +RM5 per extra barber.
   - Pro RM49/month: 3 barbers, online payments, analytics, staff and commission tracking. +RM7 per extra barber.
 - Commission model (data design only, no logic): 3% when a customer signed up through shop A's link and pays online at shop A, 5% otherwise, 0% on pay at shop. Store which shop a customer signed up through.
+- Check-in: each booking has a 6 character code and a QR payload ("cmh:checkin:<bookingId>:<code>") from the API. The shop scans the QR or types the code in the barber dashboard, and the booking becomes checked_in (allowed from 60 minutes before start until the end time).
+- Shop link and poster QR (later): each shop gets a link that customers scan with their normal phone camera, opening the shop page ready to book. It also records which shop a customer signed up through (signedUpViaShopId) for the 3% commission rule. Deep linking is for later, not the demo.
 - Module folders in apps/api for: auth, shops, barbers, services, bookings, notifications, payments (stub), plans (stub), analytics (stub).

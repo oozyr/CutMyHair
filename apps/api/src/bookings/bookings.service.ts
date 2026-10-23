@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import * as crypto from 'crypto';
 import { StoreService } from '../store/store.service';
 import type { Booking, BookingStatus } from '@cutmyhair/shared';
 import { CreateBookingDto } from './dto/create-booking.dto';
@@ -14,6 +15,58 @@ export class BookingsService {
     private readonly store: StoreService,
     private readonly notificationsService: NotificationsService,
   ) {}
+
+  private getCheckInSecret(): string {
+    const secret =
+      process.env.CHECKIN_SECRET ||
+      (process.env.NODE_ENV !== 'production' ? 'dev-checkin-secret-key' : '');
+    if (!secret) {
+      throw new BadRequestException(
+        'CHECKIN_SECRET environment variable is not configured',
+      );
+    }
+    return secret;
+  }
+
+  getCheckInCode(bookingId: string): { code: string; payload: string } {
+    this.findOne(bookingId);
+    const secret = this.getCheckInSecret();
+    const hash = crypto
+      .createHmac('sha256', secret)
+      .update(bookingId)
+      .digest('hex');
+    const code = hash.slice(0, 6).toUpperCase();
+    const payload = `cmh:checkin:${bookingId}:${code}`;
+    return { code, payload };
+  }
+
+  checkIn(id: string, code: string): Booking {
+    const booking = this.findOne(id);
+
+    if (booking.status !== 'pending' && booking.status !== 'confirmed') {
+      throw new BadRequestException(
+        `Booking cannot be checked in with current status: ${booking.status}`,
+      );
+    }
+
+    const { code: expectedCode } = this.getCheckInCode(id);
+    if (!code || code.trim().toUpperCase() !== expectedCode) {
+      throw new BadRequestException('Invalid check-in code');
+    }
+
+    const now = Date.now();
+    const startMs = new Date(booking.startTime).getTime();
+    const endMs = new Date(booking.endTime).getTime();
+    const windowStartMs = startMs - 60 * 60 * 1000;
+
+    if (now < windowStartMs || now > endMs) {
+      throw new BadRequestException(
+        'Check-in is only available between 60 minutes before start time and the booking end time',
+      );
+    }
+
+    return this.updateStatus(id, 'checked_in');
+  }
 
   create(dto: CreateBookingDto): Booking {
     const { customerId, shopId, barberId, serviceId, startTime } = dto;

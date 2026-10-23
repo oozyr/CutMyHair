@@ -98,6 +98,21 @@ export const api = {
     return request<Booking[]>(`/bookings${qs}`);
   },
 
+  async getBooking(id: string): Promise<Booking> {
+    return request<Booking>(`/bookings/${id}`);
+  },
+
+  async getCheckInCode(bookingId: string): Promise<{ code: string; payload: string }> {
+    return request<{ code: string; payload: string }>(`/bookings/${bookingId}/check-in-code`);
+  },
+
+  async checkIn(bookingId: string, code: string): Promise<Booking> {
+    return request<Booking>(`/bookings/${bookingId}/check-in`, {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    });
+  },
+
   async createBooking(payload: CreateBookingPayload): Promise<Booking> {
     return request<Booking>('/bookings', {
       method: 'POST',
@@ -122,7 +137,27 @@ export const api = {
     return request<Review[]>(`/shops/${shopId}/reviews`);
   },
 
+  async createReview(payload: {
+    shopId: string;
+    customerId: string;
+    bookingId: string;
+    rating: number;
+    comment: string;
+  }): Promise<Review> {
+    return request<Review>('/reviews', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
   async getNotifications(customerId: string): Promise<AppNotification[]> {
     return request<AppNotification[]>(`/notifications?customerId=${encodeURIComponent(customerId)}`);
+  },
+
+  async markAllNotificationsRead(customerId: string): Promise<{ success: boolean }> {
+    return request<{ success: boolean }>(
+      `/notifications/read-all?customerId=${encodeURIComponent(customerId)}`,
+      { method: 'POST' },
+    );
   },
 };
