@@ -20,7 +20,7 @@ export default function BookingPlaceholderScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ImageBackground
-        source={require('../../../assets/images/batik1.jpg')}
+        source={require('../../assets/images/batik1.jpg')}
         style={styles.backgroundImage}
         imageStyle={styles.backgroundImageStyle}
       >
