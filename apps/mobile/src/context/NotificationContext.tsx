@@ -40,12 +40,12 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   }, []);
 
   const markAllAsRead = useCallback(async () => {
-    // Optimistically update
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     try {
       await api.markAllNotificationsRead(DEMO_CUSTOMER.id);
+      const list = await api.getNotifications(DEMO_CUSTOMER.id);
+      setNotifications(list);
     } catch {
-      // Ignore background failure
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     }
   }, []);
 

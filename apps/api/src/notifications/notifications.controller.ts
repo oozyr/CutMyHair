@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
 
 @Controller('notifications')
@@ -14,7 +14,11 @@ export class NotificationsController {
   }
 
   @Post('read-all')
-  markAllRead(@Query('customerId') customerId: string) {
+  markAllRead(
+    @Query('customerId') qCustomerId?: string,
+    @Body('customerId') bCustomerId?: string,
+  ) {
+    const customerId = qCustomerId || bCustomerId;
     if (customerId) {
       this.notificationsService.markAllRead(customerId);
     }
