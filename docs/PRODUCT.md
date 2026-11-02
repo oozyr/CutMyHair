@@ -1,38 +1,47 @@
 # CutMyHair product details
 
 ## Customer app (bottom navbar: Home, Map, CutMyHair, Inbox, Profile)
-Core flow: open app, find barber, choose service and barber, pick time, book, get confirmation, QR check-in at the shop.
+Core flow: open app, find barber, choose service and barber, pick time, book, pay online via Billplz, get confirmation, QR check-in at the shop.
+Guests can browse Home, Map, and shop pages without an account. Sign-in is required to book, view Inbox, or access personal QR check-in.
 
-- Home: greeting at top. Below it, one horizontally scrollable row of featured barbers (paid ads or top performing). Then a 2 column list of nearby barbershops.
-- Map: pins of barbershops within a set radius (default 10km). User can change location to view other areas.
+- Home: greeting at top. Below it, one horizontally scrollable row of featured barbers. Then a 2-column list of nearby barbershops. Shows customer prices.
+- Map: pins of barbershops within a set radius (default 10km). User can pan or search this area. Shows customer min price.
 - CutMyHair: two sections, default My QR.
-  - My QR: shortcut to the check-in QR of the customer's nearest upcoming booking. The customer shows it at the shop and the shop scans it (barber dashboard, on phone or laptop). Empty state with a "find a barber" button if there is no upcoming booking. No in-app camera for customers.
+  - My QR: shortcut to the check-in QR of the customer's nearest upcoming booking. The customer shows it at the shop and the shop scans it. Empty state with a "find a barber" button if there is no upcoming booking. Signed-out state for guests. No in-app camera for customers.
   - Feeling Lucky: randomly opens a nearby barbershop.
-- Inbox: three sections. Upcoming bookings, Completed bookings, Notifications (booking made, reminder, cancelled, rescheduled).
-- Profile.
+- Inbox: three sections. Upcoming bookings (includes awaiting payment with continue button), Completed bookings (with review sheet), Notifications (booking made, cancelled, rescheduled). Signed-out state for guests.
+- Profile: account details (name, email, phone, favorite services), edit profile modal, language toggle (English and Bahasa Malaysia), sign out. Signed-out state for guests.
 - Reviews: shop page shows rating and reviews. Only customers with a completed booking at that shop can post one.
 - Booking slots: fixed 30 minute steps built from the shop's hours and breaks, per barber. A slot is only offered if the service duration fits. No free time picker.
 
 ## Barber web app (left sidebar: Home, Bookings, Analytics, Staff Manage, Store Profile)
-- Home: placeholder for now.
-- Bookings: see and manage bookings (new, upcoming, completed, update, cancel, reschedule).
-- Analytics: placeholder ("coming soon"). Later: barber stats, average spend, customer list, products sold, reviews.
-- Staff Manage: placeholder ("coming soon"). Later: staff stats, estimated payroll from commission, permissions, add or remove staff.
+Status: not started, to be built after the customer app is finished.
+- Home: dashboard overview.
+- Bookings: see and manage bookings (new, upcoming, completed, update, cancel, reschedule, QR scanner).
+- Analytics: barber stats, average spend, customer list, products sold, reviews.
+- Staff Manage: staff stats, estimated payroll from commission, permissions, add or remove staff.
 - Store Profile: shop name, photos, services and prices, barbers, opening hours and breaks.
 
-## Demo MVP scope (pay at shop only)
-Fully working with seeded data (8 to 10 fake Cheras shops, several barbers and services each, sample bookings):
-1. Customer: browse, map, shop page, pick service and barber, pick time slot, book, Inbox, Feeling Lucky, QR check-in.
-2. Barber: login, see and manage bookings, edit store profile, services, prices, barbers and hours.
-3. A booking made in the customer app must show up in the barber dashboard (shared API).
-4. Confirmation and reminders appear in the in-app Inbox. Email confirmation and calendar add are stubs behind interfaces.
+## Payments and Pricing
+- Online payments only through Billplz (hosted checkout supporting FPX, card, and e-wallets).
+- Customer price: customer pays base service price plus a flat RM5 booking fee (SERVICE_MARKUP_SEN).
+- Platform fee: CutMyHair takes 3% of the base service price on every booking, across all plans.
+- Payment hold: 10 minutes (PAYMENT_HOLD_MINUTES). Slot is held as pending_payment; if unpaid after 10 minutes, the hold expires lazily.
+- Cancellation and refund policy: full refund (marked refund_pending) if cancelled more than 2 hours before start (REFUND_CUTOFF_HOURS). No refund if cancelled within 2 hours of start.
+- No-show deposits: deposits with a 70/30 no-show split (70% to the shop, 30% to CutMyHair) are planned, not built.
 
-## The frame (structure only, not features)
-- Online payments (Billplz, QR and e-wallets), commission and weekly payouts: stub module and interface. Payment screen shows "Pay at shop".
-- Shop plans, modelled in data with feature flags:
-  - Base RM29/month: shop discoverable, bookings, reviews, 1 barber, pay at shop only. +RM5 per extra barber.
-  - Pro RM49/month: 3 barbers, online payments, analytics, staff and commission tracking. +RM7 per extra barber.
-- Commission model (data design only, no logic): 3% when a customer signed up through shop A's link and pays online at shop A, 5% otherwise, 0% on pay at shop. Store which shop a customer signed up through.
-- Check-in: each booking has a 6 character code and a QR payload ("cmh:checkin:<bookingId>:<code>") from the API. The shop scans the QR or types the code in the barber dashboard, and the booking becomes checked_in (allowed from 60 minutes before start until the end time).
-- Shop link and poster QR (later): each shop gets a link that customers scan with their normal phone camera, opening the shop page ready to book. It also records which shop a customer signed up through (signedUpViaShopId) for the 3% commission rule. Deep linking is for later, not the demo.
-- Module folders in apps/api for: auth, shops, barbers, services, bookings, notifications, payments (stub), plans (stub), analytics (stub).
+## Authentication
+- Email OTP verification (6-digit code). In development, DEV_FIXED_OTP is supported and codes print to the API console.
+- Session tokens: signed HMAC token valid for 30 days, stored securely on the mobile device.
+- New registration requires full name, valid Malaysian phone number (+60 or 0 prefix, normalized to +60xxxxxxxxx), and consent acceptance (consentAcceptedAt).
+
+## Shop Subscription Plans
+Modelled in data with feature flags (returned by GET /api/plans):
+- Base RM39/month: 2 barber profiles, RM6 per extra barber. Includes core listing, bookings, reviews, online payments.
+- Pro RM79/month: 4 barber profiles, RM9 per extra barber. Includes everything in Base plus staff management, commission tracking, and basic analytics.
+- Max RM119/month: 6 barber profiles, RM15 per extra barber. Includes everything in Pro plus multi-chair scheduling, advanced analytics, and priority placement.
+Each plan includes everything below it.
+
+## Check-in and Data Notes
+- Check-in: each booking has a 6-character code and a QR payload ("cmh:checkin:<bookingId>:<code>") generated by the API. The shop scans the QR or enters the code in the barber dashboard, and the booking becomes checked_in (valid from 60 minutes before start until the booking end time).
+- signedUpViaShopId: field exists in the customer data model for future shop attribution, but is currently unused.

@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import * as crypto from 'crypto';
 import { StoreService } from '../store/store.service';
-import type { Booking, BookingStatus } from '@cutmyhair/shared';
+import type { Booking, BookingStatus, PaymentMethod } from '@cutmyhair/shared';
 import {
   calculateBookingAmounts,
   PAYMENT_HOLD_MINUTES,
@@ -75,6 +75,9 @@ export class BookingsService {
 
   create(dto: CreateBookingDto): Booking {
     const { customerId, shopId, barberId, serviceId, startTime } = dto;
+    if (!customerId) {
+      throw new BadRequestException('customerId is required');
+    }
 
     // Expire stale holds before conflict check
     this.store.expireUnpaidBookings();
@@ -141,7 +144,7 @@ export class BookingsService {
       price: amounts.customerTotalSen,
       // New bookings start as pending_payment; become confirmed on payment success
       status: 'pending_payment',
-      paymentMethod: (dto as any).paymentMethod || 'fpx',
+      paymentMethod: dto.paymentMethod,
       paymentStatus: 'pending',
       expiresAt,
       createdAt: nowIso,
@@ -198,7 +201,12 @@ export class BookingsService {
    * Marks a booking as confirmed (paid) and sends the booking_made notification.
    * Called by PaymentsService on successful payment.
    */
-  confirmPayment(id: string, billId?: string, billUrl?: string): Booking {
+  confirmPayment(
+    id: string,
+    billId?: string,
+    billUrl?: string,
+    paymentMethod?: PaymentMethod,
+  ): Booking {
     const booking = this.store.bookings.get(id);
     if (!booking) throw new NotFoundException(`Booking ${id} not found`);
 
@@ -208,6 +216,7 @@ export class BookingsService {
       paymentStatus: 'paid',
       billId: billId ?? booking.billId,
       billUrl: billUrl ?? booking.billUrl,
+      paymentMethod: paymentMethod ?? booking.paymentMethod,
       updatedAt: new Date().toISOString(),
     };
     this.store.bookings.set(id, updated);

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import { api, type AppNotification } from '@/api';
-import { DEMO_CUSTOMER } from '@/config/demoCustomer';
+import { useAuth } from '@/context/AuthContext';
 
 interface NotificationContextValue {
   notifications: AppNotification[];
@@ -22,32 +22,38 @@ const NotificationContext = createContext<NotificationContextValue>({
 });
 
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated } = useAuth();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const refreshNotifications = useCallback(async () => {
+    if (!isAuthenticated) {
+      setNotifications([]);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
-      const list = await api.getNotifications(DEMO_CUSTOMER.id);
+      const list = await api.getNotifications();
       setNotifications(list);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to fetch notifications');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isAuthenticated]);
 
   const markAllAsRead = useCallback(async () => {
+    if (!isAuthenticated) return;
     try {
-      await api.markAllNotificationsRead(DEMO_CUSTOMER.id);
-      const list = await api.getNotifications(DEMO_CUSTOMER.id);
+      await api.markAllNotificationsRead();
+      const list = await api.getNotifications();
       setNotifications(list);
     } catch {
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     }
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     refreshNotifications();

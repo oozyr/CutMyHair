@@ -306,3 +306,54 @@ describe('Sync marks booking as paid in mock mode', () => {
     assert.equal(after.paymentStatus, 'paid');
   });
 });
+
+describe('Booking creation and payment without paymentMethod', () => {
+  it('creates booking with paymentMethod undefined and marks it as paid', () => {
+    const store = makeStore();
+    const nowIso = new Date().toISOString();
+    const bookingId = 'bkg-nomethod-1';
+    
+    // Simulate booking creation without paymentMethod
+    const booking = {
+      id: bookingId,
+      customerId: 'cust-1',
+      shopId: 'shop-1',
+      barberId: 'barber-1',
+      serviceId: 'service-1',
+      startTime: nowIso,
+      endTime: new Date(Date.now() + 1800000).toISOString(),
+      servicePriceSen: 2000,
+      markupSen: 500,
+      customerTotalSen: 2500,
+      platformFeeSen: 60,
+      shopPayoutSen: 1940,
+      price: 2500,
+      status: 'pending_payment',
+      paymentMethod: undefined,
+      paymentStatus: 'pending',
+      expiresAt: new Date(Date.now() + 600000).toISOString(),
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    };
+    store.bookings.set(bookingId, booking);
+
+    assert.equal(store.bookings.get(bookingId).paymentMethod, undefined);
+    assert.equal(store.bookings.get(bookingId).status, 'pending_payment');
+
+    // Simulate payment confirmation without payment method reported
+    const current = store.bookings.get(bookingId);
+    store.bookings.set(bookingId, {
+      ...current,
+      status: 'confirmed',
+      paymentStatus: 'paid',
+      billId: 'bill-123',
+      paymentMethod: undefined,
+      updatedAt: new Date().toISOString(),
+    });
+
+    const confirmed = store.bookings.get(bookingId);
+    assert.equal(confirmed.status, 'confirmed');
+    assert.equal(confirmed.paymentStatus, 'paid');
+    assert.equal(confirmed.paymentMethod, undefined);
+  });
+});

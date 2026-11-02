@@ -9,12 +9,17 @@ import {
 } from './payment.provider.interface';
 import { verifyBillplzSignature } from './billplz-signature';
 
+export function normalizeBillplzBaseUrl(raw?: string): string {
+  const base = raw?.trim() || 'https://www.billplz-sandbox.com/api';
+  return base.replace(/\/+$/, '').replace(/\/v3\/?$/, '').replace(/\/+$/, '');
+}
+
 @Injectable()
 export class BillplzPaymentProvider implements PaymentProvider {
   private readonly logger = new Logger(BillplzPaymentProvider.name);
 
   private get baseUrl(): string {
-    return process.env.BILLPLZ_BASE_URL || 'https://www.billplz-sandbox.com/api';
+    return normalizeBillplzBaseUrl(process.env.BILLPLZ_BASE_URL);
   }
 
   private get secretKey(): string {
@@ -48,14 +53,6 @@ export class BillplzPaymentProvider implements PaymentProvider {
     if (params.redirectUrl) {
       body.set('redirect_url', params.redirectUrl);
     }
-    // For FPX, record the chosen method so it is stored on the booking.
-    // Billplz pre-selection requires a specific bank code we do not have at this point,
-    // so we append auto_submit=true to the bill URL to skip the method selection landing page.
-    // The Billplz page shows its own method selection; this is acceptable for the sandbox demo.
-    if (params.paymentMethod === 'fpx') {
-      body.set('reference_1_label', 'Payment Method');
-      body.set('reference_1', 'FPX');
-    }
 
     const res = await fetch(`${this.baseUrl}/v3/bills`, {
       method: 'POST',
@@ -73,7 +70,7 @@ export class BillplzPaymentProvider implements PaymentProvider {
     }
 
     const data = await res.json() as { id: string; url: string };
-    const paymentUrl = `${data.url}?auto_submit=true`;
+    const paymentUrl = data.url;
 
     this.logger.log(`Created Billplz bill ${data.id} for booking ${params.bookingId}`);
 

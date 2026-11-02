@@ -1,7 +1,8 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Patch, Post, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RequestOtpDto } from './dto/request-otp.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { UpdateMeDto } from './dto/update-me.dto';
 import { CustomerAuthGuard } from './guards/customer-auth.guard';
 import { CurrentCustomer } from './decorators/current-customer.decorator';
 import type { Customer } from '@cutmyhair/shared';
@@ -29,5 +30,14 @@ export class AuthController {
   @UseGuards(CustomerAuthGuard)
   getCurrentCustomer(@CurrentCustomer() customer: Customer) {
     return { customer };
+  }
+
+  @Patch('me')
+  @UseGuards(CustomerAuthGuard)
+  updateCurrentCustomer(
+    @CurrentCustomer() customer: Customer,
+    @Body() dto: UpdateMeDto,
+  ) {
+    return this.authService.updateMe(customer.id, dto);
   }
 }

@@ -17,8 +17,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, radius, shadow } from '@/theme';
 import { useLanguage } from '@/i18n';
 import { api, type ShopWithDistance } from '@/api';
-import { DEMO_CUSTOMER } from '@/config/demoCustomer';
+import { useAuth } from '@/context/AuthContext';
 import { CheckInQRModal } from '@/components/CheckInQRModal';
+import { SignInModal } from '@/components/SignInModal';
+import { SignedOutState } from '@/components/SignedOutState';
 import { formatSlotTime } from '@/components/DateTimeSlotPicker';
 import type { Booking, Shop, Service, Barber } from '@cutmyhair/shared';
 
@@ -38,8 +40,10 @@ function formatDateLong(dateStr: string): string {
 export default function CutMyHairScreen() {
   const router = useRouter();
   const { t } = useLanguage();
+  const { isAuthenticated } = useAuth();
 
   const [activeTab, setActiveTab] = useState<CutTab>('my_qr');
+  const [signInVisible, setSignInVisible] = useState(false);
 
   // My QR state
   const [nearestBooking, setNearestBooking] = useState<Booking | null>(null);
@@ -61,9 +65,15 @@ export default function CutMyHairScreen() {
 
   // Fetch nearest upcoming booking for customer
   const fetchNearestBooking = useCallback(async () => {
+    if (!isAuthenticated) {
+      setLoadingBooking(false);
+      setRefreshingBooking(false);
+      setNearestBooking(null);
+      return;
+    }
     setErrorBooking(null);
     try {
-      const bookings = await api.getBookings(DEMO_CUSTOMER.id);
+      const bookings = await api.getBookings();
       const now = Date.now();
 
       const eligible = bookings.filter((b) => {
@@ -99,7 +109,7 @@ export default function CutMyHairScreen() {
       setLoadingBooking(false);
       setRefreshingBooking(false);
     }
-  }, [t]);
+  }, [isAuthenticated, t]);
 
   // Fetch shops for feeling lucky
   const fetchNearbyShops = useCallback(async () => {
@@ -223,6 +233,14 @@ export default function CutMyHairScreen() {
 
         {/* Tab 1: My QR */}
         {activeTab === 'my_qr' && (
+          !isAuthenticated ? (
+            <SignedOutState
+              iconName="qr-code-outline"
+              title={t('guest.cutmyhairTitle')}
+              subtitle={t('guest.cutmyhairSubtitle')}
+              onSignInPress={() => setSignInVisible(true)}
+            />
+          ) : (
           <ScrollView
             style={styles.tabContent}
             contentContainerStyle={styles.scrollContent}
@@ -346,6 +364,7 @@ export default function CutMyHairScreen() {
               </View>
             )}
           </ScrollView>
+          )
         )}
 
         {/* Tab 2: Feeling Lucky */}
@@ -453,6 +472,13 @@ export default function CutMyHairScreen() {
           onClose={() => setQrModalVisible(false)}
           qrData={qrData}
           t={t}
+        />
+
+        {/* Sign In Modal */}
+        <SignInModal
+          visible={signInVisible}
+          onClose={() => setSignInVisible(false)}
+          onSuccess={() => fetchNearestBooking()}
         />
       </ImageBackground>
     </SafeAreaView>

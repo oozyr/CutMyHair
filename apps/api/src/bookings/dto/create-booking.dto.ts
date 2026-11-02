@@ -1,12 +1,12 @@
 import type { BookingStatus, PaymentMethod } from '@cutmyhair/shared';
 
 export class CreateBookingDto {
-  customerId!: string;
+  customerId?: string;
   shopId!: string;
   barberId!: string;
   serviceId!: string;
   startTime!: string; // ISO datetime
-  paymentMethod!: PaymentMethod;
+  paymentMethod?: PaymentMethod;
 }
 
 export class UpdateBookingStatusDto {

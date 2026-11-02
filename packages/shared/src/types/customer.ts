@@ -13,5 +13,6 @@ export interface Customer {
   preferences?: CustomerPreferences;
   photoUrl?: string;
   signedUpViaShopId?: string; // for commission tracking data model
+  consentAcceptedAt?: string; // ISO
   createdAt: string; // ISO
 }

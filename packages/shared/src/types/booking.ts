@@ -30,7 +30,7 @@ export interface Booking {
   price: number;
 
   status: BookingStatus;
-  paymentMethod: PaymentMethod;
+  paymentMethod?: PaymentMethod;
   paymentStatus: PaymentStatus;
 
   // Online payment lifecycle

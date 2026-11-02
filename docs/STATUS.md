@@ -65,10 +65,10 @@ All routes use the global `/api` prefix.
 - `app/(tabs)/map.tsx` (`/map`): Map tab with react-native-maps, 10km radius circle, pins for shops, 500m circles for freelance, customer min price, bottom detail card, and search this area button. (Done)
 - `app/(tabs)/cutmyhair.tsx` (`/cutmyhair`): CutMyHair tab with My QR and Feeling Lucky. Shows relative upcoming seed booking on fresh start. (Done)
 - `app/(tabs)/inbox.tsx` (`/inbox`): Inbox tab with Upcoming bookings (including pending_payment holds with Awaiting payment badge and Continue payment button), Completed bookings with review sheet, and Notifications with unread indicators. (Done)
-- `app/(tabs)/profile.tsx` (`/profile`): Language toggle (English / Bahasa Malaysia) with persistent state. (Partial)
+- `app/(tabs)/profile.tsx` (`/profile`): Profile tab with real customer details (name, email, phone, favorite services), edit profile modal, language toggle (English / Bahasa Malaysia), sign out, and guest signed-out state. (Done)
 - `app/shop/[id].tsx` (`/shop/:id`): Shop detail screen with photo gallery, customer prices, operating hours with break validation, tabs for services, barbers, reviews, and Book button. (Done)
-- `app/booking/new/[shopId].tsx` (`/booking/new/:shopId`): 4-step booking wizard (Service, Barber / Any Barber, 14-day date strip with slot availability, Summary with payment method picker, fee breakdown, cancellation policy, and payment trigger). (Done)
-- `app/booking/payment/[bookingId].tsx` (`/booking/payment/:bookingId`): Payment screen with hold timer countdown, WebBrowser auth session checkout, sync verification, and retry/change-method states. (Done)
+- `app/booking/new/[shopId].tsx` (`/booking/new/:shopId`): 4-step booking wizard (Service, Barber / Any Barber, 14-day date strip with slot availability, Summary with fee breakdown, cancellation policy, next-page payment notice, guest sign-in prompt, and Pay button). (Done)
+- `app/booking/payment/[bookingId].tsx` (`/booking/payment/:bookingId`): Payment screen with hold timer countdown, WebBrowser auth session checkout, sync verification, and Try again state (no Change method button). (Done)
 - `app/booking/detail/[id].tsx` (`/booking/detail/:id`): Booking detail screen with payment method, payment status, cancellation refund notice, check-in QR modal, and reschedule flow. (Done)
 - `app/booking/success.tsx` (`/booking/success`): Booking confirmation screen showing appointment summary. (Done)
 
@@ -90,7 +90,7 @@ All routes use the global `/api` prefix.
 | Customer: Inbox (Upcoming) | Done | Lists active bookings, navigates to booking details. |
 | Customer: Inbox (Completed & Reviews) | Done | Completed bookings list, 1-5 star review modal with comment submission. |
 | Customer: Inbox (Notifications) | Done | In-app notifications for booking creation, rescheduling, and cancellation. |
-| Customer: Profile Tab | Partial | Language switcher works; customer auth and profile editing not started in mobile UI. |
+| Customer: Profile Tab | Done | Profile details, edit modal (name, phone, favorite services), guest signed-out screen, sign out, language switcher. |
 | Customer: Shop Details | Done | Photos, operating hours with break validation, services, barbers, reviews. |
 | Customer: Booking Flow | Done | 4-step wizard, 30m slot calculation, any-barber assignment. |
 | Customer: Booking Management | Done | Reschedule with slot picker, cancel, and QR check-in modal. |
@@ -100,7 +100,7 @@ All routes use the global `/api` prefix.
 | Barber: Analytics | Stub | API returns static stub message; web UI not started. |
 | Barber: Staff Management | Not started | Web UI not started. |
 | Barber: Store Profile Management | Not started | Web UI not started. |
-| Auth: Email OTP & Session Token | Done | API endpoints for request-otp and verify-otp, session token, CustomerAuthGuard. |
+| Auth: Email OTP & Session Token | Done | API endpoints for request-otp and verify-otp, 30-day session token, CustomerAuthGuard; Mobile AuthContext, expo-secure-store persistence, 3-step SignInModal, guest state. |
 | Payments: Provider Abstraction | Done | PaymentProvider interface with MockPaymentProvider and BillplzPaymentProvider; factory switches on env vars. |
 | Payments: Online Payment Flow | Done | pending_payment status, 10min hold, lazy expiry, start/sync/callback/return endpoints, mock checkout page. |
 | Payments: Refund Rule | Done | refund_pending if cancelled >2h before start; no refund within 2h. Billplz refunds manual via dashboard. |
@@ -109,7 +109,6 @@ All routes use the global `/api` prefix.
 | Email / Calendar Stubs | Stub | OtpSender mock logs to server console. |
 
 ## 7. Known Bugs and Loose Ends
-- **Hardcoded Demo Customer in Mobile**: Mobile UI uses `cust-001` (Ahmad Faris) in `apps/mobile/src/config/demoCustomer.ts` until auth UI is connected.
 - **Hardcoded Location**: Defaults to Cheras coordinates (`3.139, 101.6869`) in both mobile client and API.
 - **Automated Reminders Missing**: No background cron or worker triggers reminder notifications before booking start times.
 - **Turbopack Build Conflict**: Next.js 16 Turbopack fails to resolve CJS barrel re-exports from `@cutmyhair/shared`. Web scripts use `--webpack` and `transpilePackages: ['@cutmyhair/shared']` as the workaround.
@@ -143,4 +142,5 @@ npm run dev:mobile # Expo customer app (press a for Android, w for web)
 - Shared LocationContext with expo-location fallback to Cheras coordinates wired into Home and Map tabs.
 - app.json converted to app.config.js reading GOOGLE_MAPS_API_KEY from environment with graceful default fallback for Expo Go.
 - Online payment flow: POST /api/bookings creates pending_payment with 10min hold; start/sync/callback/return endpoints; Billplz x_signature verification; mock checkout page with Pay/Fail buttons; cancel refund rule (refund_pending if >2h, none if within 2h). All 28 tests pass.
-- Customer mobile online payment: customerPriceSen used across all screens; payment method selector (FPX, Card, DuitNow, E-wallet); WebBrowser auth session checkout; hold timer countdown with expiration handling; Inbox pending_payment badge with continue payment; booking details payment method and status badges; cancellation refund notice.
+- Customer mobile online payment: customerPriceSen used across all screens; payment method selection deferred to Billplz hosted page; WebBrowser auth session checkout; hold timer countdown with expiration handling; Inbox pending_payment badge with continue payment; booking details online payment fallback when method unset; cancellation refund notice. All 29 tests pass.
+- Customer authentication and accounts: CustomerAuthGuard protects bookings, payments start/sync, reviews create, and notifications; 30-day HMAC session tokens; Malaysian phone validation and normalization; consentAcceptedAt; PATCH /api/auth/me; AuthContext with expo-secure-store persistence and automatic 401 handling; guest browsing for Home, Map, shop pages; guest sign-in gates on booking step 4, Inbox, CutMyHair tab (My QR), and Profile tab; demo customer removed from mobile. All 38 tests pass.

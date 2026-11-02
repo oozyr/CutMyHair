@@ -1,3 +1,4 @@
+import '../config/load-env';
 import { Global, Module, OnModuleInit } from '@nestjs/common';
 import { PAYMENT_PROVIDER } from './payment/payment.tokens';
 import { MockPaymentProvider } from './payment/mock-payment.provider';

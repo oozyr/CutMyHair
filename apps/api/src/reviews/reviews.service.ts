@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -26,7 +27,7 @@ export class ReviewsService {
       throw new BadRequestException('Booking does not belong to this shop');
     }
     if (booking.customerId !== customerId) {
-      throw new BadRequestException('Booking does not belong to this customer');
+      throw new ForbiddenException('Booking does not belong to this customer');
     }
 
     // Prevent duplicate reviews per booking

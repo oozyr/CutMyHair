@@ -2,43 +2,76 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   Param,
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingStatusDto } from './dto/update-booking-status.dto';
 import { RescheduleBookingDto } from './dto/reschedule-booking.dto';
 import { CheckInDto } from './dto/check-in.dto';
+import { CustomerAuthGuard } from '../auth/guards/customer-auth.guard';
+import { CurrentCustomer } from '../auth/decorators/current-customer.decorator';
+import type { Customer } from '@cutmyhair/shared';
 
 @Controller('bookings')
 export class BookingsController {
   constructor(private readonly bookingsService: BookingsService) {}
 
   @Post()
-  create(@Body() dto: CreateBookingDto) {
-    return this.bookingsService.create(dto);
+  @UseGuards(CustomerAuthGuard)
+  create(
+    @Body() dto: CreateBookingDto,
+    @CurrentCustomer() customer: Customer,
+  ) {
+    return this.bookingsService.create({
+      ...dto,
+      customerId: customer.id,
+    });
   }
 
   @Get()
+  @UseGuards(CustomerAuthGuard)
   findAll(
-    @Query('customerId') customerId?: string,
+    @CurrentCustomer() customer: Customer,
     @Query('shopId') shopId?: string,
     @Query('barberId') barberId?: string,
   ) {
-    return this.bookingsService.findAll({ customerId, shopId, barberId });
+    return this.bookingsService.findAll({
+      customerId: customer.id,
+      shopId,
+      barberId,
+    });
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.bookingsService.findOne(id);
+  @UseGuards(CustomerAuthGuard)
+  findOne(
+    @Param('id') id: string,
+    @CurrentCustomer() customer: Customer,
+  ) {
+    const booking = this.bookingsService.findOne(id);
+    if (booking.customerId !== customer.id) {
+      throw new ForbiddenException('Access denied to this booking');
+    }
+    return booking;
   }
 
   @Get(':id/check-in-code')
-  getCheckInCode(@Param('id') id: string) {
+  @UseGuards(CustomerAuthGuard)
+  getCheckInCode(
+    @Param('id') id: string,
+    @CurrentCustomer() customer: Customer,
+  ) {
+    const booking = this.bookingsService.findOne(id);
+    if (booking.customerId !== customer.id) {
+      throw new ForbiddenException('Access denied to this booking');
+    }
     return this.bookingsService.getCheckInCode(id);
   }
 
@@ -53,12 +86,29 @@ export class BookingsController {
   }
 
   @Patch(':id/reschedule')
-  reschedule(@Param('id') id: string, @Body() dto: RescheduleBookingDto) {
+  @UseGuards(CustomerAuthGuard)
+  reschedule(
+    @Param('id') id: string,
+    @Body() dto: RescheduleBookingDto,
+    @CurrentCustomer() customer: Customer,
+  ) {
+    const booking = this.bookingsService.findOne(id);
+    if (booking.customerId !== customer.id) {
+      throw new ForbiddenException('Access denied to this booking');
+    }
     return this.bookingsService.reschedule(id, dto.startTime);
   }
 
   @Delete(':id')
-  cancel(@Param('id') id: string) {
+  @UseGuards(CustomerAuthGuard)
+  cancel(
+    @Param('id') id: string,
+    @CurrentCustomer() customer: Customer,
+  ) {
+    const booking = this.bookingsService.findOne(id);
+    if (booking.customerId !== customer.id) {
+      throw new ForbiddenException('Access denied to this booking');
+    }
     return this.bookingsService.cancel(id);
   }
 }

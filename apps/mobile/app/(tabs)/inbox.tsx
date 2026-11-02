@@ -18,8 +18,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, radius, shadow } from '@/theme';
 import { useLanguage } from '@/i18n';
 import { api, type AppNotification } from '@/api';
-import { DEMO_CUSTOMER } from '@/config/demoCustomer';
+import { useAuth } from '@/context/AuthContext';
 import { useNotifications } from '@/context/NotificationContext';
+import { SignInModal } from '@/components/SignInModal';
+import { SignedOutState } from '@/components/SignedOutState';
 import { formatSen, type Booking, type Shop, type Barber, type Service } from '@cutmyhair/shared';
 import { formatSlotTime } from '@/components/DateTimeSlotPicker';
 
@@ -74,6 +76,7 @@ function getStatusBadge(status: Booking['status']) {
 export default function InboxScreen() {
   const router = useRouter();
   const { t } = useLanguage();
+  const { user, isAuthenticated } = useAuth();
   const {
     notifications,
     loading: notificationsLoading,
@@ -83,6 +86,7 @@ export default function InboxScreen() {
   } = useNotifications();
 
   const [activeTab, setActiveTab] = useState<InboxTab>('upcoming');
+  const [signInVisible, setSignInVisible] = useState(false);
 
   // Upcoming
   const [upcomingBookings, setUpcomingBookings] = useState<EnrichedBooking[]>([]);
@@ -106,17 +110,23 @@ export default function InboxScreen() {
 
   // Mark notifications as read when opening notifications tab
   useEffect(() => {
-    if (activeTab === 'notifications') {
+    if (activeTab === 'notifications' && isAuthenticated) {
       markAllAsRead();
     }
-  }, [activeTab, markAllAsRead]);
+  }, [activeTab, isAuthenticated, markAllAsRead]);
 
   // Fetch upcoming bookings
   const fetchUpcomingBookings = useCallback(async () => {
+    if (!isAuthenticated) {
+      setUpcomingLoading(false);
+      setUpcomingRefreshing(false);
+      setUpcomingBookings([]);
+      return;
+    }
     setUpcomingError(null);
     try {
       const [bookings, shops] = await Promise.all([
-        api.getBookings(DEMO_CUSTOMER.id),
+        api.getBookings(),
         api.getShops().catch(() => [] as Shop[]),
       ]);
 
@@ -171,14 +181,20 @@ export default function InboxScreen() {
       setUpcomingLoading(false);
       setUpcomingRefreshing(false);
     }
-  }, [t]);
+  }, [isAuthenticated, t]);
 
   // Fetch completed bookings & reviews
   const fetchCompletedBookings = useCallback(async () => {
+    if (!isAuthenticated) {
+      setCompletedLoading(false);
+      setCompletedRefreshing(false);
+      setCompletedBookings([]);
+      return;
+    }
     setCompletedError(null);
     try {
       const [bookings, shops] = await Promise.all([
-        api.getBookings(DEMO_CUSTOMER.id),
+        api.getBookings(),
         api.getShops().catch(() => [] as Shop[]),
       ]);
 
@@ -208,7 +224,7 @@ export default function InboxScreen() {
             for (const b of bList) barbersMap.set(b.id, b);
             for (const s of sList) servicesMap.set(s.id, s);
             for (const r of reviews) {
-              if (r.customerId === DEMO_CUSTOMER.id) {
+              if (r.customerId === user?.id) {
                 reviewedIds.add(r.bookingId);
               }
             }
@@ -234,7 +250,7 @@ export default function InboxScreen() {
       setCompletedLoading(false);
       setCompletedRefreshing(false);
     }
-  }, [t]);
+  }, [isAuthenticated, user?.id, t]);
 
   useFocusEffect(
     useCallback(() => {
@@ -272,7 +288,6 @@ export default function InboxScreen() {
     try {
       await api.createReview({
         shopId: reviewBooking.booking.shopId,
-        customerId: DEMO_CUSTOMER.id,
         bookingId: reviewBooking.booking.id,
         rating,
         comment: comment.trim(),
@@ -303,6 +318,26 @@ export default function InboxScreen() {
           <Text style={styles.headerTitle}>{t('inbox.title')}</Text>
         </View>
 
+        {/* Guest state */}
+        {!isAuthenticated ? (
+          <>
+            <SignedOutState
+              iconName="mail-outline"
+              title={t('guest.inboxTitle')}
+              subtitle={t('guest.inboxSubtitle')}
+              onSignInPress={() => setSignInVisible(true)}
+            />
+            <SignInModal
+              visible={signInVisible}
+              onClose={() => setSignInVisible(false)}
+              onSuccess={() => {
+                fetchUpcomingBookings();
+                fetchCompletedBookings();
+              }}
+            />
+          </>
+        ) : (
+          <>
         {/* 3-Section Segmented Switch */}
         <View style={styles.segmentedContainer}>
           <View style={styles.segmentedControl}>
@@ -675,85 +710,87 @@ export default function InboxScreen() {
           </View>
         )}
 
-        {/* Leave a Review Modal / Sheet */}
-        <Modal
-          visible={reviewModalVisible}
-          animationType="slide"
-          presentationStyle="pageSheet"
-          onRequestClose={() => setReviewModalVisible(false)}
-        >
-          <SafeAreaView style={styles.reviewModalContainer}>
-            <View style={styles.reviewModalHeader}>
-              <TouchableOpacity
-                style={styles.closeBtn}
-                onPress={() => setReviewModalVisible(false)}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="close" size={24} color={colors.primary} />
-              </TouchableOpacity>
-              <Text style={styles.reviewModalHeaderTitle}>{t('inbox.reviewModalTitle')}</Text>
-              <View style={styles.closePlaceholder} />
-            </View>
-
-            <View style={styles.reviewModalBody}>
-              {reviewBooking && (
-                <Text style={styles.reviewSubtitle}>
-                  {t('inbox.reviewModalSubtitle', {
-                    barber: reviewBooking.barberName,
-                    shop: reviewBooking.shopName,
-                  })}
-                </Text>
-              )}
-
-              {/* Star Rating Selector */}
-              <View style={styles.starsRow}>
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <TouchableOpacity
-                    key={star}
-                    onPress={() => setRating(star)}
-                    activeOpacity={0.7}
-                    style={styles.starBtn}
-                  >
-                    <Ionicons
-                      name={star <= rating ? 'star' : 'star-outline'}
-                      size={36}
-                      color={star <= rating ? '#F59E0B' : colors.border}
-                    />
-                  </TouchableOpacity>
-                ))}
+          {/* Leave a Review Modal / Sheet */}
+          <Modal
+            visible={reviewModalVisible}
+            animationType="slide"
+            presentationStyle="pageSheet"
+            onRequestClose={() => setReviewModalVisible(false)}
+          >
+            <SafeAreaView style={styles.reviewModalContainer}>
+              <View style={styles.reviewModalHeader}>
+                <TouchableOpacity
+                  style={styles.closeBtn}
+                  onPress={() => setReviewModalVisible(false)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="close" size={24} color={colors.primary} />
+                </TouchableOpacity>
+                <Text style={styles.reviewModalHeaderTitle}>{t('inbox.reviewModalTitle')}</Text>
+                <View style={styles.closePlaceholder} />
               </View>
 
-              {/* Comment Input */}
-              <TextInput
-                style={styles.commentInput}
-                placeholder={t('inbox.reviewCommentPlaceholder')}
-                placeholderTextColor={colors.textDisabled}
-                value={comment}
-                onChangeText={setComment}
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
-              />
-
-              {/* Submit Button */}
-              <TouchableOpacity
-                style={[
-                  styles.submitReviewBtn,
-                  submittingReview && styles.submitReviewBtnDisabled,
-                ]}
-                onPress={handleSubmitReview}
-                disabled={submittingReview}
-                activeOpacity={0.8}
-              >
-                {submittingReview ? (
-                  <ActivityIndicator color={colors.textInverse} />
-                ) : (
-                  <Text style={styles.submitReviewBtnText}>{t('inbox.reviewSubmit')}</Text>
+              <View style={styles.reviewModalBody}>
+                {reviewBooking && (
+                  <Text style={styles.reviewSubtitle}>
+                    {t('inbox.reviewModalSubtitle', {
+                      barber: reviewBooking.barberName,
+                      shop: reviewBooking.shopName,
+                    })}
+                  </Text>
                 )}
-              </TouchableOpacity>
-            </View>
-          </SafeAreaView>
-        </Modal>
+
+                {/* Star Rating Selector */}
+                <View style={styles.starsRow}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <TouchableOpacity
+                      key={star}
+                      onPress={() => setRating(star)}
+                      activeOpacity={0.7}
+                      style={styles.starBtn}
+                    >
+                      <Ionicons
+                        name={star <= rating ? 'star' : 'star-outline'}
+                        size={36}
+                        color={star <= rating ? '#F59E0B' : colors.border}
+                      />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                {/* Comment Input */}
+                <TextInput
+                  style={styles.commentInput}
+                  placeholder={t('inbox.reviewCommentPlaceholder')}
+                  placeholderTextColor={colors.textDisabled}
+                  value={comment}
+                  onChangeText={setComment}
+                  multiline
+                  numberOfLines={4}
+                  textAlignVertical="top"
+                />
+
+                {/* Submit Button */}
+                <TouchableOpacity
+                  style={[
+                    styles.submitReviewBtn,
+                    submittingReview && styles.submitReviewBtnDisabled,
+                  ]}
+                  onPress={handleSubmitReview}
+                  disabled={submittingReview}
+                  activeOpacity={0.8}
+                >
+                  {submittingReview ? (
+                    <ActivityIndicator color={colors.textInverse} />
+                  ) : (
+                    <Text style={styles.submitReviewBtnText}>{t('inbox.reviewSubmit')}</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </SafeAreaView>
+          </Modal>
+        </>
+        )}
       </ImageBackground>
     </SafeAreaView>
   );

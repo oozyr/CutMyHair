@@ -32,6 +32,7 @@ module.exports = {
       'expo-localization',
       'expo-location',
       'expo-web-browser',
+      'expo-secure-store',
     ],
     experiments: {
       typedRoutes: true,

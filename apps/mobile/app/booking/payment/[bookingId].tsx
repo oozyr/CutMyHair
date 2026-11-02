@@ -157,11 +157,6 @@ export default function PaymentScreen() {
     router.back();
   }
 
-  function handleChangeMethod() {
-    // Go back to summary step
-    router.back();
-  }
-
   if (status === 'paid') {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -215,9 +210,6 @@ export default function PaymentScreen() {
               <Text style={styles.primaryBtnText}>{t('booking.tryAgain')}</Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity style={styles.secondaryBtn} onPress={handleChangeMethod}>
-            <Text style={styles.secondaryBtnText}>{t('booking.changeMethod')}</Text>
-          </TouchableOpacity>
           {isExpired && (
             <TouchableOpacity style={[styles.secondaryBtn, { marginTop: spacing[2] }]} onPress={handlePickNewTime}>
               <Text style={styles.secondaryBtnText}>{t('booking.holdExpiredBtn')}</Text>
@@ -245,9 +237,6 @@ export default function PaymentScreen() {
           <Text style={styles.bodyText}>{t('booking.paymentPendingMessage')}</Text>
           <TouchableOpacity style={styles.primaryBtn} onPress={syncStatus}>
             <Text style={styles.primaryBtnText}>{t('booking.checkAgain')}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.secondaryBtn} onPress={handleChangeMethod}>
-            <Text style={styles.secondaryBtnText}>{t('booking.changeMethod')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>

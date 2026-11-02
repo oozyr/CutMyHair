@@ -15,7 +15,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, radius, shadow } from '@/theme';
 import { useLanguage } from '@/i18n';
 import { api } from '@/api';
-import { DEMO_CUSTOMER } from '@/config/demoCustomer';
+import { useAuth } from '@/context/AuthContext';
+import { SignInModal } from '@/components/SignInModal';
 import {
   formatSen,
   SERVICE_MARKUP_SEN,
@@ -24,7 +25,6 @@ import {
   type Barber,
   type Service,
   type AvailabilitySlot,
-  type PaymentMethod,
 } from '@cutmyhair/shared';
 
 // ---------------------------------------------------------------------------
@@ -44,7 +44,6 @@ interface BookingState {
   selectedDate: string | null; // YYYY-MM-DD
   selectedSlot: AvailabilitySlot | null;
   slots: AvailabilitySlot[];
-  selectedPaymentMethod: PaymentMethod | null;
 }
 
 const INITIAL_STATE: Omit<BookingState, 'step' | 'shop' | 'services' | 'barbers'> = {
@@ -55,7 +54,6 @@ const INITIAL_STATE: Omit<BookingState, 'step' | 'shop' | 'services' | 'barbers'
   selectedDate: null,
   selectedSlot: null,
   slots: [],
-  selectedPaymentMethod: null,
 };
 
 // ---------------------------------------------------------------------------
@@ -190,6 +188,10 @@ export default function BookingScreen() {
   const shopId = params.shopId || params.id;
   const router = useRouter();
   const { t } = useLanguage();
+  const { isAuthenticated } = useAuth();
+
+  const [signInVisible, setSignInVisible] = useState(false);
+  const [pendingConfirm, setPendingConfirm] = useState(false);
 
   const [state, setState] = useState<BookingState>({
     step: 1,
@@ -339,8 +341,15 @@ export default function BookingScreen() {
 
   // -- Step 4: confirm booking
   async function confirmBooking() {
-    const { shop, selectedService, selectedBarber, isAnyBarber, resolvedBarberId, selectedSlot, selectedPaymentMethod } = state;
-    if (!shop || !selectedService || !selectedSlot || !selectedPaymentMethod) return;
+    const { shop, selectedService, selectedBarber, isAnyBarber, resolvedBarberId, selectedSlot } = state;
+    if (!shop || !selectedService || !selectedSlot) return;
+
+    // Gate: require sign-in before booking
+    if (!isAuthenticated) {
+      setPendingConfirm(true);
+      setSignInVisible(true);
+      return;
+    }
 
     const barberId = isAnyBarber ? resolvedBarberId : selectedBarber?.id;
     if (!barberId) return;
@@ -349,12 +358,10 @@ export default function BookingScreen() {
     setSlotConflictMsg(null);
     try {
       const booking = await api.createBooking({
-        customerId: DEMO_CUSTOMER.id,
         shopId: shop.id,
         barberId,
         serviceId: selectedService.id,
         startTime: selectedSlot.startTime,
-        paymentMethod: selectedPaymentMethod,
       });
 
       // Start payment
@@ -481,13 +488,26 @@ export default function BookingScreen() {
           slot={state.selectedSlot}
           submitting={submitting}
           slotConflictMsg={slotConflictMsg}
-          selectedPaymentMethod={state.selectedPaymentMethod}
-          onSelectPaymentMethod={(m) => setState((prev) => ({ ...prev, selectedPaymentMethod: m }))}
           onBack={goBack}
           onConfirm={confirmBooking}
           t={t}
         />
       )}
+
+      <SignInModal
+        visible={signInVisible}
+        onClose={() => {
+          setSignInVisible(false);
+          setPendingConfirm(false);
+        }}
+        onSuccess={() => {
+          setSignInVisible(false);
+          if (pendingConfirm) {
+            setPendingConfirm(false);
+            confirmBooking();
+          }
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -715,20 +735,8 @@ function Step3DateTime({
 }
 
 // ---------------------------------------------------------------------------
-// Step 4 - Summary + Payment Method
+// Step 4 - Summary
 // ---------------------------------------------------------------------------
-type PaymentMethodOption = {
-  id: 'fpx' | 'card' | 'duitnow' | 'ewallet';
-  icon: React.ComponentProps<typeof Ionicons>['name'];
-};
-
-const PAYMENT_METHODS: PaymentMethodOption[] = [
-  { id: 'fpx', icon: 'business-outline' },
-  { id: 'card', icon: 'card-outline' },
-  { id: 'duitnow', icon: 'qr-code-outline' },
-  { id: 'ewallet', icon: 'wallet-outline' },
-];
-
 function Step4Summary({
   shop,
   service,
@@ -736,8 +744,6 @@ function Step4Summary({
   slot,
   submitting,
   slotConflictMsg,
-  selectedPaymentMethod,
-  onSelectPaymentMethod,
   onBack,
   onConfirm,
   t,
@@ -748,8 +754,6 @@ function Step4Summary({
   slot: AvailabilitySlot;
   submitting: boolean;
   slotConflictMsg: string | null;
-  selectedPaymentMethod: 'fpx' | 'card' | 'duitnow' | 'ewallet' | null;
-  onSelectPaymentMethod: (m: 'fpx' | 'card' | 'duitnow' | 'ewallet') => void;
   onBack: () => void;
   onConfirm: () => void;
   t: (k: string, p?: Record<string, string | number>) => string;
@@ -770,8 +774,6 @@ function Step4Summary({
     { label: t('booking.timeLabel'), value: displayTime },
     { label: t('booking.priceLabel'), value: formatSen(customerPriceSen), accent: true },
   ];
-
-  const canConfirm = !!selectedPaymentMethod && !submitting;
 
   return (
     <View style={styles.stepContainer}>
@@ -795,30 +797,6 @@ function Step4Summary({
           </Text>
         </View>
 
-        {/* Payment method picker */}
-        <Text style={styles.paymentSectionTitle}>{t('booking.paymentMethod')}</Text>
-        {PAYMENT_METHODS.map((method) => {
-          const selected = selectedPaymentMethod === method.id;
-          return (
-            <TouchableOpacity
-              key={method.id}
-              style={[styles.paymentRow, selected && styles.paymentRowSelected]}
-              onPress={() => onSelectPaymentMethod(method.id)}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.paymentIcon, selected && styles.paymentIconSelected]}>
-                <Ionicons name={method.icon} size={20} color={selected ? colors.textInverse : colors.textSecondary} />
-              </View>
-              <Text style={[styles.paymentLabel, selected && styles.paymentLabelSelected]}>
-                {t(`booking.${method.id}`)}
-              </Text>
-              <View style={[styles.radioOuter, selected && styles.radioOuterSelected]}>
-                {selected && <View style={styles.radioInner} />}
-              </View>
-            </TouchableOpacity>
-          );
-        })}
-
         {slotConflictMsg ? (
           <View style={styles.conflictBanner}>
             <Ionicons name="warning-outline" size={16} color={colors.warning} />
@@ -829,21 +807,22 @@ function Step4Summary({
 
       <View style={styles.confirmFooter}>
         <TouchableOpacity
-          style={[styles.confirmBtn, !canConfirm && styles.confirmBtnDisabled]}
+          style={[styles.confirmBtn, submitting && styles.confirmBtnDisabled]}
           onPress={onConfirm}
-          disabled={!canConfirm}
+          disabled={submitting}
           activeOpacity={0.8}
         >
           {submitting ? (
             <ActivityIndicator color={colors.textInverse} />
           ) : (
             <Text style={styles.confirmBtnText}>
-              {selectedPaymentMethod
-                ? t('booking.payBtn', { amount: formatSen(customerPriceSen) })
-                : t('booking.choosPaymentMethod')}
+              {t('booking.payBtn', { amount: formatSen(customerPriceSen) })}
             </Text>
           )}
         </TouchableOpacity>
+        <Text style={styles.choosePaymentNextPage}>
+          {t('booking.choosePaymentNextPage')}
+        </Text>
       </View>
     </View>
   );
@@ -1218,68 +1197,12 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.md,
     color: colors.textInverse,
   },
-
-  // Payment method picker
-  paymentSectionTitle: {
-    fontFamily: typography.fontFamily.bold,
-    fontSize: typography.fontSize.md,
-    color: colors.primary,
-    marginTop: spacing[5],
-    marginBottom: spacing[3],
-  },
-  paymentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    padding: spacing[4],
-    marginBottom: spacing[3],
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    gap: spacing[3],
-    ...shadow.sm,
-  },
-  paymentRowSelected: {
-    borderColor: colors.accent,
-    backgroundColor: '#F0F9FF',
-  },
-  paymentIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.md,
-    backgroundColor: colors.surfaceAlt,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  paymentIconSelected: {
-    backgroundColor: colors.accent,
-  },
-  paymentLabel: {
-    flex: 1,
-    fontFamily: typography.fontFamily.bold,
-    fontSize: typography.fontSize.sm,
-    color: colors.primary,
-  },
-  paymentLabelSelected: {
-    color: colors.accent,
-  },
-  radioOuter: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  radioOuterSelected: {
-    borderColor: colors.accent,
-  },
-  radioInner: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: colors.accent,
+  choosePaymentNextPage: {
+    fontFamily: typography.fontFamily.regular,
+    fontSize: typography.fontSize.xs,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: spacing[2],
   },
   feeNote: {
     fontFamily: typography.fontFamily.regular,

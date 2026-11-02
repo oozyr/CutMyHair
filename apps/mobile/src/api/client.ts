@@ -6,6 +6,8 @@ import type {
   Booking,
   Review,
   AvailabilitySlot,
+  Customer,
+  CustomerPreferences,
 } from '@cutmyhair/shared';
 
 export interface AppNotification {
@@ -36,23 +38,46 @@ export interface GetShopsParams {
 }
 
 export interface CreateBookingPayload {
-  customerId: string;
+  customerId?: string;
   shopId: string;
   barberId: string;
   serviceId: string;
   startTime: string;
-  paymentMethod: string;
+  paymentMethod?: string;
+}
+
+let currentAuthToken: string | null = null;
+let unauthorizedHandler: (() => void) | null = null;
+
+export function setAuthToken(token: string | null) {
+  currentAuthToken = token;
+}
+
+export function setOnUnauthorized(callback: (() => void) | null) {
+  unauthorizedHandler = callback;
 }
 
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options?.headers as Record<string, string>),
+  };
+
+  if (currentAuthToken) {
+    headers['Authorization'] = `Bearer ${currentAuthToken}`;
+  }
+
   const response = await fetch(url, {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
+    headers,
   });
+
+  if (response.status === 401) {
+    if (unauthorizedHandler) {
+      unauthorizedHandler();
+    }
+  }
 
   if (!response.ok) {
     const errorBody = await response.json().catch(() => ({}));
@@ -65,6 +90,43 @@ async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  // Auth endpoints
+  async requestOtp(email: string): Promise<{ success: boolean; isNewUser: boolean; message: string }> {
+    return request<{ success: boolean; isNewUser: boolean; message: string }>('/auth/request-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  },
+
+  async verifyOtp(payload: {
+    email: string;
+    code: string;
+    name?: string;
+    phone?: string;
+    preferences?: CustomerPreferences;
+  }): Promise<{ token: string; customer: Customer }> {
+    return request<{ token: string; customer: Customer }>('/auth/verify-otp', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async getMe(): Promise<{ customer: Customer }> {
+    return request<{ customer: Customer }>('/auth/me');
+  },
+
+  async updateMe(payload: {
+    name?: string;
+    phone?: string;
+    preferences?: CustomerPreferences;
+  }): Promise<{ customer: Customer }> {
+    return request<{ customer: Customer }>('/auth/me', {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  // Public shop & barber endpoints
   async getShops(params?: GetShopsParams): Promise<ShopWithDistance[]> {
     const query = new URLSearchParams();
     if (params?.lat !== undefined) query.set('lat', String(params.lat));
@@ -103,6 +165,7 @@ export const api = {
     );
   },
 
+  // Protected customer bookings
   async getBookings(customerId?: string): Promise<Booking[]> {
     const qs = customerId ? `?customerId=${customerId}` : '';
     return request<Booking[]>(`/bookings${qs}`);
@@ -149,7 +212,7 @@ export const api = {
 
   async createReview(payload: {
     shopId: string;
-    customerId: string;
+    customerId?: string;
     bookingId: string;
     rating: number;
     comment: string;
@@ -160,15 +223,16 @@ export const api = {
     });
   },
 
-  async getNotifications(customerId: string): Promise<AppNotification[]> {
-    return request<AppNotification[]>(`/notifications?customerId=${encodeURIComponent(customerId)}`);
+  async getNotifications(customerId?: string): Promise<AppNotification[]> {
+    const qs = customerId ? `?customerId=${encodeURIComponent(customerId)}` : '';
+    return request<AppNotification[]>(`/notifications${qs}`);
   },
 
-  async markAllNotificationsRead(customerId: string): Promise<{ success: boolean }> {
-    return request<{ success: boolean }>(
-      `/notifications/read-all?customerId=${encodeURIComponent(customerId)}`,
-      { method: 'POST' },
-    );
+  async markAllNotificationsRead(customerId?: string): Promise<{ success: boolean }> {
+    const qs = customerId ? `?customerId=${encodeURIComponent(customerId)}` : '';
+    return request<{ success: boolean }>(`/notifications/read-all${qs}`, {
+      method: 'POST',
+    });
   },
 
   async startPayment(bookingId: string): Promise<{ paymentUrl: string; paymentId: string }> {

@@ -4,11 +4,11 @@ CutMyHair API uses a modular provider pattern for external services (Payments, G
 
 ## 1. Provider Interfaces and Injection Tokens
 
-| Provider | Interface Path | Injection Token | Default Mock |
-|---|---|---|---|
-| Payment | `src/providers/payment/payment.provider.interface.ts` | `PAYMENT_PROVIDER` | `MockPaymentProvider` |
-| Geolocation | `src/providers/geo/geo.provider.interface.ts` | `GEO_PROVIDER` | `MockGeoProvider` |
-| OTP Sender | `src/providers/otp/otp-sender.interface.ts` | `OTP_SENDER` | `MockOtpSender` |
+| Provider | Interface Path | Injection Token | Default Mock | Real Implementation |
+|---|---|---|---|---|
+| Payment | `src/providers/payment/payment.provider.interface.ts` | `PAYMENT_PROVIDER` | `MockPaymentProvider` | `BillplzPaymentProvider` |
+| Geolocation | `src/providers/geo/geo.provider.interface.ts` | `GEO_PROVIDER` | `MockGeoProvider` | `GoogleGeoProvider` |
+| OTP Sender | `src/providers/otp/otp-sender.interface.ts` | `OTP_SENDER` | `MockOtpSender` | `ResendOtpSender` |
 
 All providers are registered globally in `apps/api/src/providers/providers.module.ts`.
 
@@ -16,12 +16,12 @@ All providers are registered globally in `apps/api/src/providers/providers.modul
 
 ## 2. Environment Variables
 
-| Variable | Description | Default |
+| Variable | Description | Recommended Value |
 |---|---|---|
-| `PAYMENT_PROVIDER` | `mock` or `billplz` | `mock` |
+| `PAYMENT_PROVIDER` | `mock` or `billplz` | `mock` (or `billplz` when keys present) |
 | `GEO_PROVIDER` | `mock` or `google` | `mock` |
 | `OTP_PROVIDER` | `mock` or `resend` | `mock` |
-| `BILLPLZ_BASE_URL` | Billplz API base URL | `https://www.billplz-sandbox.com/api/v3` |
+| `BILLPLZ_BASE_URL` | Billplz API base URL | `https://www.billplz-sandbox.com/api` |
 | `BILLPLZ_SECRET_KEY` | Billplz Secret Key | none |
 | `BILLPLZ_XSIGNATURE_KEY` | Billplz X-Signature Key | none |
 | `BILLPLZ_COLLECTION_ID` | Billplz Collection ID | none |
@@ -31,12 +31,17 @@ All providers are registered globally in `apps/api/src/providers/providers.modul
 
 ---
 
-## 3. How to Plug in a Real Provider
+## 3. Payment Gateway Implementations
 
-To add a real provider without rewriting existing code:
+### Existing: BillplzPaymentProvider
+`BillplzPaymentProvider` is implemented at `apps/api/src/providers/payment/billplz-payment.provider.ts`.
+It creates bills via `POST /v3/bills`, verifies callback HMAC signatures with `BILLPLZ_XSIGNATURE_KEY`, and checks bill status via `GET /v3/bills/:id`. It is automatically selected when `PAYMENT_PROVIDER=billplz` and all four `BILLPLZ_` environment variables are present. The provider accepts `BILLPLZ_BASE_URL` with or without a trailing slash and with or without a `/v3` path segment.
 
-### Example: Adding a Real Billplz Payment Provider
-1. Create `apps/api/src/providers/payment/billplz-payment.provider.ts`:
+### Adding a Different Payment Gateway in the Future
+To add a new payment gateway without modifying existing business logic:
+
+1. Create a new provider file implementing `PaymentProvider`:
+   `apps/api/src/providers/payment/your-gateway-payment.provider.ts`
    ```typescript
    import { Injectable } from '@nestjs/common';
    import {
@@ -49,37 +54,30 @@ To add a real provider without rewriting existing code:
    } from './payment.provider.interface';
 
    @Injectable()
-   export class BillplzPaymentProvider implements PaymentProvider {
+   export class YourGatewayPaymentProvider implements PaymentProvider {
      async createPayment(params: CreatePaymentParams): Promise<CreatePaymentResult> {
-       // Call Billplz API POST /bills using process.env.BILLPLZ_SECRET_KEY
-       // Return { paymentId: bill.id, paymentUrl: bill.url, status: 'pending' }
+       // Call gateway API to initiate transaction
+       // Return { paymentId, paymentUrl, status: 'pending' }
      }
 
      async getPaymentStatus(paymentId: string): Promise<PaymentStatus> {
-       // Call Billplz API GET /bills/:id and map state
+       // Query gateway status and return 'pending', 'paid', or 'failed'
      }
 
      async refund(paymentId: string, amountSen?: number): Promise<RefundResult> {
-       // Call Billplz refund endpoint or record refund
+       // Call gateway refund API
      }
 
      async handleWebhook(payload: any, signature?: string): Promise<WebhookResult> {
-       // Verify X-Signature and update payment status
+       // Verify webhook signature and return parsed status
      }
    }
    ```
-2. Update the provider factory in `apps/api/src/providers/providers.module.ts`:
-   ```typescript
-   {
-     provide: PAYMENT_PROVIDER,
-     useFactory: () => {
-       const isBillplz = process.env.PAYMENT_PROVIDER === 'billplz';
-       const hasKeys = process.env.BILLPLZ_SECRET_KEY && process.env.BILLPLZ_COLLECTION_ID;
-       return isBillplz && hasKeys ? new BillplzPaymentProvider() : new MockPaymentProvider();
-     },
-   }
-   ```
-3. Set `PAYMENT_PROVIDER=billplz` and supply the required API keys in `.env`.
+
+2. Register the gateway in `apps/api/src/providers/providers.module.ts`:
+   Update the factory function for `PAYMENT_PROVIDER` to check `process.env.PAYMENT_PROVIDER === 'your-gateway'` and verify required gateway credentials.
+
+3. Configure gateway environment variables in `.env` and `.env.example`.
 
 ### Fail-safe Fallback
 On server startup, `ProvidersModule` evaluates requested providers against required environment variables. If any required keys are missing, the API logs a warning and automatically falls back to the mock provider without crashing.

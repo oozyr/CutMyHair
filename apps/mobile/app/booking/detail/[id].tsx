@@ -100,7 +100,7 @@ function getPaymentMethodLabel(method: Booking['paymentMethod'], t: (k: string) 
     case 'ewallet':
       return t('booking.ewallet');
     default:
-      return method || '';
+      return t('bookingDetail.onlinePayment');
   }
 }
 

@@ -4,12 +4,12 @@ CutMyHair is one app for Malaysians to find, compare, book and pay a barber. Fir
 Two products: a customer mobile app and a barber web dashboard.
 
 ## Current goal
-Demo-ready MVP to show shop owners. Pay at shop only. No real payments. Not production yet.
+Demo-ready MVP to show shop owners with real Billplz online payments (and mock mode when keys are absent). Not production yet.
 Full product details are in docs/PRODUCT.md. Read it only when a task needs it.
 
 ## Stack
 - Customer app: Expo React Native (apps/mobile)
-- Barber web app: Next.js PWA (apps/web)
+- Barber web app: Next.js PWA (apps/web, not started yet)
 - API: NestJS modular monolith (apps/api). For the demo it uses an in-memory store with seeded Cheras data. Postgres with PostGIS comes later.
 - Shared types and seed data: packages/shared
 - TypeScript everywhere. Google Maps for maps.
@@ -17,10 +17,10 @@ Full product details are in docs/PRODUCT.md. Read it only when a task needs it.
 
 ## Product rules
 - Languages: Bahasa Malaysia and English only. All text goes through i18n, no hardcoded strings.
-- Login: phone OTP plus Google. In the demo, OTP uses a fixed dev code behind an interface.
+- Login: email OTP with signed 30-day session tokens. In dev, OTP uses DEV_FIXED_OTP or prints to the server console.
 - Reminders are in app only (push and Inbox). No WhatsApp or SMS reminders.
 - No built-in prayer times or Friday breaks. Each shop sets its own hours.
-- Payments, commission, payouts, analytics and payroll are stubs only. Do not integrate any payment provider.
+- Online payments only through Billplz (or local mock checkout when keys are not configured). Payouts, analytics and payroll are stubs only.
 
 ## How to work
 - Do only the task in the current prompt. Do not touch unrelated files or refactor things nobody asked for.

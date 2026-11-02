@@ -3,6 +3,7 @@ import { SplashScreen, Stack } from 'expo-router';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import { LanguageProvider } from '@/i18n';
+import { AuthProvider } from '@/context/AuthContext';
 import { NotificationProvider } from '@/context/NotificationContext';
 import { LocationProvider } from '@/context/LocationContext';
 
@@ -26,15 +27,17 @@ export default function RootLayout() {
 
   return (
     <LanguageProvider>
-      <LocationProvider>
-        <NotificationProvider>
-          <StatusBar style="dark" />
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="shop/[id]" options={{ headerShown: false }} />
-          </Stack>
-        </NotificationProvider>
-      </LocationProvider>
+      <AuthProvider>
+        <LocationProvider>
+          <NotificationProvider>
+            <StatusBar style="dark" />
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="shop/[id]" options={{ headerShown: false }} />
+            </Stack>
+          </NotificationProvider>
+        </LocationProvider>
+      </AuthProvider>
     </LanguageProvider>
   );
 }

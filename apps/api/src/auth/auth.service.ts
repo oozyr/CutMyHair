@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Inject,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import * as crypto from 'crypto';
@@ -10,6 +11,21 @@ import { OTP_SENDER } from '../providers/otp/otp.tokens';
 import type { OtpSender } from '../providers/otp/otp-sender.interface';
 import type { Customer } from '@cutmyhair/shared';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { UpdateMeDto } from './dto/update-me.dto';
+
+export function normalizeMalaysianPhone(rawPhone: string): string {
+  if (!rawPhone || typeof rawPhone !== 'string') {
+    throw new BadRequestException('A valid Malaysian mobile phone number is required');
+  }
+  const cleaned = rawPhone.replace(/[\s\-]/g, '');
+  const match = cleaned.match(/^(\+?60|0)(\d{9,10})$/);
+  if (!match) {
+    throw new BadRequestException(
+      'Invalid Malaysian mobile phone number. Format should be +601x-xxxxxxx or 01x-xxxxxxx',
+    );
+  }
+  return `+60${match[2]}`;
+}
 
 interface OtpRecord {
   code: string;
@@ -30,7 +46,9 @@ export class AuthService {
     return process.env.AUTH_SECRET || 'dev-auth-secret-key-cutmyhair';
   }
 
-  async requestOtp(email: string): Promise<{ success: boolean; message: string }> {
+  async requestOtp(
+    email: string,
+  ): Promise<{ success: boolean; isNewUser: boolean; message: string }> {
     if (!email || typeof email !== 'string') {
       throw new BadRequestException('Email address is required');
     }
@@ -56,8 +74,13 @@ export class AuthService {
 
     await this.otpSender.send(normalizedEmail, code);
 
+    const existingCustomer = Array.from(this.store.customers.values()).find(
+      (c) => c.email.toLowerCase() === normalizedEmail,
+    );
+
     return {
       success: true,
+      isNewUser: !existingCustomer,
       message: 'OTP verification code sent',
     };
   }
@@ -86,9 +109,6 @@ export class AuthService {
       throw new BadRequestException(`Invalid verification code. ${remaining} attempt(s) remaining.`);
     }
 
-    // Code is valid: clear OTP record
-    this.otpStore.delete(normalizedEmail);
-
     // Look up or create customer
     let customer = Array.from(this.store.customers.values()).find(
       (c) => c.email.toLowerCase() === normalizedEmail,
@@ -100,23 +120,40 @@ export class AuthService {
         customer.name = dto.name.trim();
       }
       if (dto.phone && !customer.phone) {
-        customer.phone = dto.phone.trim();
+        customer.phone = normalizeMalaysianPhone(dto.phone);
+      }
+      if (dto.preferences) {
+        customer.preferences = {
+          ...(customer.preferences || {}),
+          ...dto.preferences,
+        };
       }
     } else {
+      if (!dto.name || !dto.name.trim()) {
+        throw new BadRequestException('Name is required for new registration');
+      }
+      if (!dto.phone || !dto.phone.trim()) {
+        throw new BadRequestException('Phone number is required for new registration');
+      }
+      const normalizedPhone = normalizeMalaysianPhone(dto.phone);
       customer = {
         id: `cust-${Date.now()}`,
-        name: dto.name?.trim() || normalizedEmail.split('@')[0],
-        phone: dto.phone?.trim() || '',
+        name: dto.name.trim(),
+        phone: normalizedPhone,
         email: normalizedEmail,
         emailVerified: true,
+        consentAcceptedAt: new Date().toISOString(),
         preferences: {
-          preferredLanguage: 'ms',
-          favoriteServiceTypes: [],
+          preferredLanguage: dto.preferences?.preferredLanguage || 'ms',
+          favoriteServiceTypes: dto.preferences?.favoriteServiceTypes || [],
         },
         createdAt: new Date().toISOString(),
       };
       this.store.customers.set(customer.id, customer);
     }
+
+    // Code is valid and customer resolved: clear OTP record
+    this.otpStore.delete(normalizedEmail);
 
     const token = this.createSessionToken(customer.id, customer.email);
 
@@ -124,6 +161,37 @@ export class AuthService {
       token,
       customer,
     };
+  }
+
+  async updateMe(
+    customerId: string,
+    dto: UpdateMeDto,
+  ): Promise<{ customer: Customer }> {
+    const customer = this.store.customers.get(customerId);
+    if (!customer) {
+      throw new NotFoundException('Customer not found');
+    }
+
+    if (dto.name !== undefined) {
+      const trimmed = dto.name.trim();
+      if (!trimmed) {
+        throw new BadRequestException('Name cannot be empty');
+      }
+      customer.name = trimmed;
+    }
+
+    if (dto.phone !== undefined) {
+      customer.phone = normalizeMalaysianPhone(dto.phone);
+    }
+
+    if (dto.preferences !== undefined) {
+      customer.preferences = {
+        ...(customer.preferences || {}),
+        ...dto.preferences,
+      };
+    }
+
+    return { customer };
   }
 
   createSessionToken(customerId: string, email: string): string {

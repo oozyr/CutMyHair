@@ -1,27 +1,22 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
+import { CustomerAuthGuard } from '../auth/guards/customer-auth.guard';
+import { CurrentCustomer } from '../auth/decorators/current-customer.decorator';
+import type { Customer } from '@cutmyhair/shared';
 
 @Controller('notifications')
+@UseGuards(CustomerAuthGuard)
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
   @Get()
-  getNotifications(@Query('customerId') customerId: string) {
-    if (!customerId) {
-      return [];
-    }
-    return this.notificationsService.getForCustomer(customerId);
+  getNotifications(@CurrentCustomer() customer: Customer) {
+    return this.notificationsService.getForCustomer(customer.id);
   }
 
   @Post('read-all')
-  markAllRead(
-    @Query('customerId') qCustomerId?: string,
-    @Body('customerId') bCustomerId?: string,
-  ) {
-    const customerId = qCustomerId || bCustomerId;
-    if (customerId) {
-      this.notificationsService.markAllRead(customerId);
-    }
+  markAllRead(@CurrentCustomer() customer: Customer) {
+    this.notificationsService.markAllRead(customer.id);
     return { success: true };
   }
 }

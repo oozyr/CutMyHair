@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  ForbiddenException,
   Get,
   Inject,
   NotFoundException,
@@ -10,19 +11,32 @@ import {
   Query,
   Res,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import type { Response } from 'express';
+import type { Customer, PaymentMethod } from '@cutmyhair/shared';
 import { BookingsService } from '../bookings/bookings.service';
 import { StoreService } from '../store/store.service';
 import { PAYMENT_PROVIDER } from '../providers/payment/payment.tokens';
 import type { PaymentProvider } from '../providers/payment/payment.provider.interface';
 import { MockPaymentProvider } from '../providers/payment/mock-payment.provider';
 import { verifyBillplzSignature } from '../providers/payment/billplz-signature';
+import { CustomerAuthGuard } from '../auth/guards/customer-auth.guard';
+import { CurrentCustomer } from '../auth/decorators/current-customer.decorator';
 
 const ALLOWED_RETURN_PREFIXES = ['exp://', 'cutmyhair://'];
 
 function isAllowedReturnUrl(url: string): boolean {
   return ALLOWED_RETURN_PREFIXES.some((prefix) => url.startsWith(prefix));
+}
+
+function extractPaymentMethod(data: Record<string, string>): PaymentMethod | undefined {
+  const raw = (data['payment_method'] || data['channel'] || data['transaction_type'] || '').toLowerCase();
+  if (raw.includes('fpx') || raw.includes('online_banking')) return 'fpx';
+  if (raw.includes('card') || raw.includes('visa') || raw.includes('mastercard')) return 'card';
+  if (raw.includes('duitnow') || raw.includes('qr')) return 'duitnow';
+  if (raw.includes('wallet') || raw.includes('tng') || raw.includes('boost') || raw.includes('grab')) return 'ewallet';
+  return undefined;
 }
 
 @Controller('payments')
@@ -39,17 +53,23 @@ export class PaymentsController {
    * Returns { paymentUrl, paymentId }.
    */
   @Post(':bookingId/start')
-  async start(@Param('bookingId') bookingId: string) {
+  @UseGuards(CustomerAuthGuard)
+  async start(
+    @Param('bookingId') bookingId: string,
+    @CurrentCustomer() customer: Customer,
+  ) {
     const booking = this.bookingsService.findOne(bookingId);
+    if (booking.customerId !== customer.id) {
+      throw new ForbiddenException('Access denied to this booking');
+    }
     if (booking.status !== 'pending_payment') {
       throw new BadRequestException(
         `Booking is not in pending_payment state (current: ${booking.status})`,
       );
     }
 
-    const customer = this.store.customers.get(booking.customerId);
-    const customerName = customer?.name ?? 'Customer';
-    const customerEmail = customer?.email ?? 'customer@demo.com';
+    const customerName = customer.name || 'Customer';
+    const customerEmail = customer.email || 'customer@demo.com';
 
     const publicUrl = process.env.PUBLIC_API_URL || 'http://localhost:3000/api';
     const callbackUrl = `${publicUrl}/payments/billplz/callback`;
@@ -85,8 +105,15 @@ export class PaymentsController {
    * Polls the payment provider for the current status and updates booking.
    */
   @Post(':bookingId/sync')
-  async sync(@Param('bookingId') bookingId: string) {
+  @UseGuards(CustomerAuthGuard)
+  async sync(
+    @Param('bookingId') bookingId: string,
+    @CurrentCustomer() customer: Customer,
+  ) {
     const booking = this.bookingsService.findOne(bookingId);
+    if (booking.customerId !== customer.id) {
+      throw new ForbiddenException('Access denied to this booking');
+    }
     if (!booking.billId) {
       throw new BadRequestException('No payment has been started for this booking');
     }
@@ -153,7 +180,8 @@ export class PaymentsController {
     }
 
     if (isPaid) {
-      this.bookingsService.confirmPayment(booking.id, billId);
+      const reportedMethod = extractPaymentMethod(body);
+      this.bookingsService.confirmPayment(booking.id, billId, undefined, reportedMethod);
     } else {
       this.store.bookings.set(booking.id, {
         ...booking,
@@ -209,6 +237,7 @@ p{color:#555;font-size:0.9rem}
 .pill{display:inline-block;background:#e8f5e9;color:#2e7d32;padding:0.15rem 0.5rem;border-radius:20px;font-size:0.75rem;margin-bottom:1.5rem}
 .btn{display:block;width:100%;padding:0.75rem;border:none;border-radius:8px;font-size:1rem;cursor:pointer;margin-bottom:0.75rem}
 .pay{background:#4caf50;color:#fff}.fail{background:#f44336;color:#fff}
+.sub-btn{background:#e2e8f0;color:#1e293b;font-size:0.85rem;padding:0.5rem;margin-bottom:0.5rem}
 </style></head>
 <body><div class="card">
 <h1>Mock Payment</h1>
@@ -218,6 +247,21 @@ p{color:#555;font-size:0.9rem}
 <form method="POST" action="${publicUrl}/payments/mock/${paymentId}/pay">
   <button class="btn pay" type="submit">Pay (simulate success)</button>
 </form>
+<p style="font-size:0.8rem;color:#64748b;margin:0.5rem 0">Or simulate paying with a specific method:</p>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.75rem">
+  <form method="POST" action="${publicUrl}/payments/mock/${paymentId}/pay?method=fpx">
+    <button class="btn sub-btn" type="submit">FPX</button>
+  </form>
+  <form method="POST" action="${publicUrl}/payments/mock/${paymentId}/pay?method=card">
+    <button class="btn sub-btn" type="submit">Card</button>
+  </form>
+  <form method="POST" action="${publicUrl}/payments/mock/${paymentId}/pay?method=duitnow">
+    <button class="btn sub-btn" type="submit">DuitNow</button>
+  </form>
+  <form method="POST" action="${publicUrl}/payments/mock/${paymentId}/pay?method=ewallet">
+    <button class="btn sub-btn" type="submit">E-wallet</button>
+  </form>
+</div>
 <form method="POST" action="${publicUrl}/payments/mock/${paymentId}/fail">
   <button class="btn fail" type="submit">Fail (simulate failure)</button>
 </form>
@@ -229,7 +273,11 @@ p{color:#555;font-size:0.9rem}
    * Simulates a successful payment (mock mode only).
    */
   @Post('mock/:paymentId/pay')
-  async mockPay(@Param('paymentId') paymentId: string, @Res() res: Response) {
+  async mockPay(
+    @Param('paymentId') paymentId: string,
+    @Query('method') method: PaymentMethod | undefined,
+    @Res() res: Response,
+  ) {
     if (!(this.paymentProvider instanceof MockPaymentProvider)) {
       throw new BadRequestException('Mock endpoints are only available in mock mode');
     }
@@ -246,7 +294,7 @@ p{color:#555;font-size:0.9rem}
         (b) => b.billId === paymentId,
       );
       if (booking && booking.paymentStatus !== 'paid') {
-        this.bookingsService.confirmPayment(booking.id, paymentId);
+        this.bookingsService.confirmPayment(booking.id, paymentId, undefined, method);
       }
     }
 
