@@ -15,3 +15,4 @@ export * from './plans';
 // Helpers
 export * from './haversine';
 export * from './availability';
+export * from './opening-hours';

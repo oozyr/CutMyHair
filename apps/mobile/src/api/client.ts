@@ -22,11 +22,15 @@ export type ShopWithDistance = Shop & {
   distanceKm?: number;
   minPrice?: number | null;
   maxPrice?: number | null;
+  minPriceSen?: number | null;
+  openNow?: boolean;
+  kind?: 'shop' | 'freelance';
 };
 
 export interface GetShopsParams {
   lat?: number;
   lng?: number;
+  radiusKm?: number;
   radius?: number;
 }
 
@@ -63,7 +67,11 @@ export const api = {
     const query = new URLSearchParams();
     if (params?.lat !== undefined) query.set('lat', String(params.lat));
     if (params?.lng !== undefined) query.set('lng', String(params.lng));
-    if (params?.radius !== undefined) query.set('radius', String(params.radius));
+    if (params?.radiusKm !== undefined) {
+      query.set('radiusKm', String(params.radiusKm));
+    } else if (params?.radius !== undefined) {
+      query.set('radius', String(params.radius));
+    }
     const qs = query.toString();
     return request<ShopWithDistance[]>(`/shops${qs ? `?${qs}` : ''}`);
   },

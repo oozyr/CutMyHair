@@ -39,6 +39,7 @@ export interface Shop {
   planId: PlanId;
   plan?: PlanId;           // Alias for backward compatibility
   isDemo: boolean;
+  kind?: 'shop' | 'freelance';
 
   verificationStatus?: VerificationStatus;
   ownerName?: string;

@@ -19,6 +19,7 @@ import { colors, typography, spacing, radius, shadow } from '@/theme';
 import { useLanguage } from '@/i18n';
 import { api, type ShopWithDistance } from '@/api';
 import { formatSen } from '@cutmyhair/shared';
+import { useLocation } from '@/context/LocationContext';
 
 const CHERAS_LAT = 3.139;
 const CHERAS_LNG = 101.6869;
@@ -34,6 +35,7 @@ function getTimeGreetingKey(): string {
 export default function HomeScreen() {
   const router = useRouter();
   const { t } = useLanguage();
+  const { location, requestDeviceLocation, isUsingDeviceLocation, loading: locationLoading } = useLocation();
 
   const [shops, setShops] = useState<ShopWithDistance[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,9 +46,9 @@ export default function HomeScreen() {
     try {
       setError(null);
       const data = await api.getShops({
-        lat: CHERAS_LAT,
-        lng: CHERAS_LNG,
-        radius: DEFAULT_RADIUS_KM,
+        lat: location.lat,
+        lng: location.lng,
+        radiusKm: DEFAULT_RADIUS_KM,
       });
       setShops(data);
     } catch (err: any) {
@@ -55,7 +57,7 @@ export default function HomeScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [location.lat, location.lng]);
 
   useEffect(() => {
     fetchShops();
@@ -208,9 +210,26 @@ export default function HomeScreen() {
             <View style={styles.section}>
               <View style={styles.sectionHeaderRow}>
                 <Text style={styles.sectionTitle}>{t('home.nearbyShops')}</Text>
-                <Text style={styles.sectionSubtitleBadge}>
-                  {t('home.within10km')}
-                </Text>
+                <TouchableOpacity
+                  style={styles.locationButton}
+                  onPress={requestDeviceLocation}
+                  disabled={locationLoading}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons
+                    name={isUsingDeviceLocation ? 'navigate' : 'navigate-outline'}
+                    size={13}
+                    color={isUsingDeviceLocation ? colors.accent : colors.textSecondary}
+                  />
+                  <Text
+                    style={[
+                      styles.locationButtonText,
+                      isUsingDeviceLocation && styles.locationButtonTextActive,
+                    ]}
+                  >
+                    {isUsingDeviceLocation ? t('home.myLocation') : t('home.useMyLocation')}
+                  </Text>
+                </TouchableOpacity>
               </View>
 
               {nearbyShops.length === 0 ? (
@@ -410,6 +429,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing[2],
     paddingVertical: 3,
     borderRadius: radius.sm,
+  },
+  locationButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[1],
+    backgroundColor: colors.surfaceAlt,
+    paddingHorizontal: spacing[3],
+    paddingVertical: 5,
+    borderRadius: radius.full,
+  },
+  locationButtonText: {
+    fontFamily: typography.fontFamily.regular,
+    fontSize: typography.fontSize.xs,
+    color: colors.textSecondary,
+  },
+  locationButtonTextActive: {
+    color: colors.accent,
+    fontFamily: typography.fontFamily.bold,
   },
   featuredList: {
     paddingRight: spacing[4],

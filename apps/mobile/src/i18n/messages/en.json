@@ -26,7 +26,9 @@
     "emptyMessage": "There are no barbershops within 10 km of Cheras right now.",
     "errorTitle": "Couldn't load shops",
     "errorMessage": "Please check your network connection or API server.",
-    "retry": "Try Again"
+    "retry": "Try Again",
+    "useMyLocation": "Use my location",
+    "myLocation": "My Location"
   },
   "profile": {
     "title": "Profile",
@@ -181,6 +183,21 @@
     "feelingLuckySubtitle": "Discover your next great barbershop in Cheras with a single tap.",
     "loadingRandom": "Finding a great spot...",
     "errorRandom": "Couldn't load barbershops. Please try again."
+  },
+  "map": {
+    "title": "Map",
+    "searchThisArea": "Search this area",
+    "useMyLocation": "Use my location",
+    "within10km": "10 km search radius",
+    "fromPrice": "From {{price}}",
+    "viewShop": "View Shop",
+    "open": "Open",
+    "closed": "Closed",
+    "freelance": "Freelance Barber",
+    "approximateArea": "Approximate area (house-call)",
+    "loading": "Loading barbers...",
+    "noShops": "No barbers found in this area",
+    "tryDifferentArea": "Pan the map to search a different location."
   },
   "placeholders": {
     "homeTitle": "Home",

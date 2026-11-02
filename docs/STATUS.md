@@ -47,14 +47,14 @@ All routes use the global `/api` prefix.
 - **Financial Settings**: `SERVICE_MARKUP_SEN` (500), `PLATFORM_FEE_PERCENT` (3%), `NOSHOW_DEPOSIT_SPLIT` (70/30).
 - **Pricing Function**: `calculateBookingAmounts(servicePriceSen)` returns `servicePriceSen`, `markupSen`, `customerTotalSen`, `platformFeeSen`, and `shopPayoutSen`.
 - **Subscription Plans**: Base (RM39/mo, 2 barbers), Pro (RM79/mo, 4 barbers), Max (RM119/mo, 6 barbers) with comprehensive feature flags.
-- **Seed Data**: 10 Cheras barbershops (all marked `isDemo: true`, `verificationStatus: 'verified'`), 20 barbers, 29 services (prices in sen), 5 customers (emailVerified: true), 6 historical and upcoming bookings with dynamic relative dates, and 2 reviews.
+- **Seed Data**: 20 fictional barbershops and 3 freelance barbers (all `isDemo: true`), 46 barbers, 96 services (prices in sen), 4 shops placed outside 10km for radius testing, 5 customers, 6 relative bookings, and 2 reviews.
 - **Slot Logic (`buildSlots`)**: Evaluates fixed 30-minute increments between shop opening and closing times.
 
 ## 4. apps/mobile Screens and Routes
-- `app/_layout.tsx`: Root Stack provider, font loading, NotificationProvider. (Done)
+- `app/_layout.tsx`: Root Stack provider, font loading, NotificationProvider, LocationProvider. (Done)
 - `app/(tabs)/_layout.tsx`: Tab navigation with unread notification badge on Inbox icon. (Done)
-- `app/(tabs)/index.tsx` (`/`): Home tab with dynamic greeting, featured shops row, nearby shops grid. (Done)
-- `app/(tabs)/map.tsx` (`/map`): Map tab showing placeholder view. (Placeholder)
+- `app/(tabs)/index.tsx` (`/`): Home tab with dynamic greeting, featured shops row, nearby shops grid, device location integration. (Done)
+- `app/(tabs)/map.tsx` (`/map`): Map tab with react-native-maps, 10km radius circle, pins for shops, 500m circles for freelance, bottom detail card, and search this area button. (Done)
 - `app/(tabs)/cutmyhair.tsx` (`/cutmyhair`): CutMyHair tab with My QR and Feeling Lucky. Shows relative upcoming seed booking on fresh start. (Done)
 - `app/(tabs)/inbox.tsx` (`/inbox`): Inbox tab with Upcoming bookings, Completed bookings with review sheet, and Notifications with unread indicators. (Done)
 - `app/(tabs)/profile.tsx` (`/profile`): Language toggle (English / Bahasa Malaysia) with persistent state. (Partial)
@@ -75,7 +75,7 @@ All routes use the global `/api` prefix.
 | Feature | Status | Notes |
 |---|---|---|
 | Customer: Home Tab | Done | Time greeting, featured shops, nearby shops with distance and price range. |
-| Customer: Map Tab | Placeholder | Static placeholder screen, no map library or pin markers rendered. |
+| Customer: Map Tab | Done | react-native-maps, 10km radius circle, shop pins, freelance area circles, bottom detail card, pan search. |
 | Customer: CutMyHair (My QR) | Done | Retrieves active booking, renders check-in QR modal and 6-char HMAC code. |
 | Customer: CutMyHair (Feeling Lucky) | Done | Random shop picker from nearby shops list. |
 | Customer: Inbox (Upcoming) | Done | Lists active bookings, navigates to booking details. |
@@ -126,3 +126,8 @@ npm run dev:mobile # Expo customer app (press a for Android, w for web)
 - DI-swappable providers for Payments, Geolocation, and OTP created with fail-safe mock fallback.
 - Email OTP authentication flow with HMAC session tokens and CustomerAuthGuard added to API.
 - Booking routes in mobile separated into /booking/new/[shopId] and /booking/detail/[id] to resolve route collisions.
+- Seed data expanded to 20 fictional shops and 3 freelance barbers with varied hours, realistic services, and 4 shops outside 10km for radius testing.
+- GET /api/shops supports lat, lng, radiusKm with distance sorting, openNow, kind, and minPriceSen.
+- Real Map tab implemented with react-native-maps, 10km radius circle, freelance area circles, shop pins, bottom preview card, and pan area searching.
+- Shared LocationContext with expo-location fallback to Cheras coordinates wired into Home and Map tabs.
+- app.json converted to app.config.js reading GOOGLE_MAPS_API_KEY from environment with graceful default fallback for Expo Go.

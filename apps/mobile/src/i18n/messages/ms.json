@@ -26,7 +26,9 @@
     "emptyMessage": "Tiada kedai gunting dalam lingkungan 10 km dari Cheras buat masa ini.",
     "errorTitle": "Gagal memuatkan kedai",
     "errorMessage": "Sila periksa sambungan internet atau pelayan API anda.",
-    "retry": "Cuba Lagi"
+    "retry": "Cuba Lagi",
+    "useMyLocation": "Gunakan lokasi saya",
+    "myLocation": "Lokasi saya"
   },
   "profile": {
     "title": "Profil",
@@ -181,6 +183,21 @@
     "feelingLuckySubtitle": "Terokai kedai gunting menarik di Cheras dengan hanya satu sentuhan.",
     "loadingRandom": "Mencari kedai gunting terbaik...",
     "errorRandom": "Gagal memuatkan kedai gunting. Sila cuba lagi."
+  },
+  "map": {
+    "title": "Peta",
+    "searchThisArea": "Cari kawasan ini",
+    "useMyLocation": "Gunakan lokasi saya",
+    "within10km": "Radius carian 10 km",
+    "fromPrice": "Dari {{price}}",
+    "viewShop": "Lihat Kedai",
+    "open": "Buka",
+    "closed": "Tutup",
+    "freelance": "Barber Bebas",
+    "approximateArea": "Kawasan anggaran (lawatan rumah)",
+    "loading": "Memuatkan kedai...",
+    "noShops": "Tiada kedai gunting di kawasan ini",
+    "tryDifferentArea": "Gerakkan peta untuk mencari di kawasan lain."
   },
   "placeholders": {
     "homeTitle": "Utama",

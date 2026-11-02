@@ -4,6 +4,7 @@ import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import { LanguageProvider } from '@/i18n';
 import { NotificationProvider } from '@/context/NotificationContext';
+import { LocationProvider } from '@/context/LocationContext';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -25,13 +26,15 @@ export default function RootLayout() {
 
   return (
     <LanguageProvider>
-      <NotificationProvider>
-        <StatusBar style="dark" />
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="shop/[id]" options={{ headerShown: false }} />
-        </Stack>
-      </NotificationProvider>
+      <LocationProvider>
+        <NotificationProvider>
+          <StatusBar style="dark" />
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="shop/[id]" options={{ headerShown: false }} />
+          </Stack>
+        </NotificationProvider>
+      </LocationProvider>
     </LanguageProvider>
   );
 }

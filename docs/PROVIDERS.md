@@ -83,3 +83,11 @@ To add a real provider without rewriting existing code:
 
 ### Fail-safe Fallback
 On server startup, `ProvidersModule` evaluates requested providers against required environment variables. If any required keys are missing, the API logs a warning and automatically falls back to the mock provider without crashing.
+
+---
+
+## 4. Google Maps on Mobile (app.config.js)
+
+In Expo Go, `GOOGLE_MAPS_API_KEY` is not required because the app uses the default map provider. The key is only read by `app.config.js` into `android.config.googleMaps.apiKey` and `ios.config.googleMapsApiKey` for standalone development or production builds. If the key is omitted, the app starts normally and renders maps with the default provider.
+
+Android API key restrictions (package name and SHA-1 certificate fingerprint) will be configured in the Google Cloud Console once standalone Android builds are generated.
