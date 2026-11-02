@@ -6,7 +6,7 @@ export class CreateBookingDto {
   barberId!: string;
   serviceId!: string;
   startTime!: string; // ISO datetime
-  paymentMethod?: PaymentMethod;
+  paymentMethod!: PaymentMethod;
 }
 
 export class UpdateBookingStatusDto {

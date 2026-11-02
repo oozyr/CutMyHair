@@ -6,7 +6,11 @@ import {
 import * as crypto from 'crypto';
 import { StoreService } from '../store/store.service';
 import type { Booking, BookingStatus } from '@cutmyhair/shared';
-import { calculateBookingAmounts } from '@cutmyhair/shared';
+import {
+  calculateBookingAmounts,
+  PAYMENT_HOLD_MINUTES,
+  REFUND_CUTOFF_HOURS,
+} from '@cutmyhair/shared';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 
@@ -72,6 +76,9 @@ export class BookingsService {
   create(dto: CreateBookingDto): Booking {
     const { customerId, shopId, barberId, serviceId, startTime } = dto;
 
+    // Expire stale holds before conflict check
+    this.store.expireUnpaidBookings();
+
     const service = this.store.services.get(serviceId);
     if (!service) throw new NotFoundException(`Service ${serviceId} not found`);
     if (service.shopId !== shopId) {
@@ -93,20 +100,30 @@ export class BookingsService {
       start.getTime() + service.durationMinutes * 60000,
     ).toISOString();
 
-    // Conflict check
-    const conflict = Array.from(this.store.bookings.values()).find(
-      (b) =>
-        b.barberId === barberId &&
-        b.status !== 'cancelled' &&
+    // Conflict check: treat unexpired pending_payment bookings as taken
+    const now = Date.now();
+    const conflict = Array.from(this.store.bookings.values()).find((b) => {
+      if (b.barberId !== barberId) return false;
+      if (b.status === 'cancelled') return false;
+      // Skip expired pending_payment holds
+      if (b.status === 'pending_payment') {
+        const expiresAtMs = b.expiresAt ? new Date(b.expiresAt).getTime() : 0;
+        if (expiresAtMs > 0 && expiresAtMs <= now) return false;
+      }
+      return (
         new Date(b.startTime) < new Date(endTime) &&
-        new Date(b.endTime) > start,
-    );
+        new Date(b.endTime) > start
+      );
+    });
     if (conflict) {
       throw new BadRequestException('This time slot is already booked');
     }
 
     const id = `bkg-${Date.now()}`;
-    const now = new Date().toISOString();
+    const nowIso = new Date().toISOString();
+    const expiresAt = new Date(
+      now + PAYMENT_HOLD_MINUTES * 60 * 1000,
+    ).toISOString();
     const amounts = calculateBookingAmounts(service.price);
     const booking: Booking = {
       id,
@@ -122,35 +139,17 @@ export class BookingsService {
       platformFeeSen: amounts.platformFeeSen,
       shopPayoutSen: amounts.shopPayoutSen,
       price: amounts.customerTotalSen,
-      status: 'pending',
+      // New bookings start as pending_payment; become confirmed on payment success
+      status: 'pending_payment',
       paymentMethod: (dto as any).paymentMethod || 'fpx',
       paymentStatus: 'pending',
-      createdAt: now,
-      updatedAt: now,
+      expiresAt,
+      createdAt: nowIso,
+      updatedAt: nowIso,
     };
 
     this.store.bookings.set(id, booking);
-
-    const shop = this.store.shops.get(shopId);
-    const shopName = shop?.name ?? shopId;
-    const dateStr = start.toLocaleDateString('en-MY', {
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short',
-      timeZone: 'Asia/Kuala_Lumpur',
-    });
-    const timeStr = start.toLocaleTimeString('en-MY', {
-      hour: '2-digit',
-      minute: '2-digit',
-      timeZone: 'Asia/Kuala_Lumpur',
-    });
-    this.notificationsService.add(
-      customerId,
-      'booking_made',
-      id,
-      `Booking confirmed at ${shopName} on ${dateStr} at ${timeStr}.`,
-    );
-
+    // Notification is sent on payment success, not on creation
     return booking;
   }
 
@@ -159,6 +158,7 @@ export class BookingsService {
     shopId?: string;
     barberId?: string;
   }) {
+    this.store.expireUnpaidBookings();
     return Array.from(this.store.bookings.values()).filter((b) => {
       if (filters.customerId && b.customerId !== filters.customerId) return false;
       if (filters.shopId && b.shopId !== filters.shopId) return false;
@@ -168,13 +168,15 @@ export class BookingsService {
   }
 
   findOne(id: string): Booking {
+    this.store.expireUnpaidBookings();
     const booking = this.store.bookings.get(id);
     if (!booking) throw new NotFoundException(`Booking ${id} not found`);
     return booking;
   }
 
   updateStatus(id: string, status: BookingStatus): Booking {
-    const booking = this.findOne(id);
+    const booking = this.store.bookings.get(id);
+    if (!booking) throw new NotFoundException(`Booking ${id} not found`);
     const updated = { ...booking, status, updatedAt: new Date().toISOString() };
     this.store.bookings.set(id, updated);
 
@@ -188,6 +190,49 @@ export class BookingsService {
         `Your booking at ${shopName} has been cancelled.`,
       );
     }
+
+    return updated;
+  }
+
+  /**
+   * Marks a booking as confirmed (paid) and sends the booking_made notification.
+   * Called by PaymentsService on successful payment.
+   */
+  confirmPayment(id: string, billId?: string, billUrl?: string): Booking {
+    const booking = this.store.bookings.get(id);
+    if (!booking) throw new NotFoundException(`Booking ${id} not found`);
+
+    const updated: Booking = {
+      ...booking,
+      status: 'confirmed',
+      paymentStatus: 'paid',
+      billId: billId ?? booking.billId,
+      billUrl: billUrl ?? booking.billUrl,
+      updatedAt: new Date().toISOString(),
+    };
+    this.store.bookings.set(id, updated);
+
+    // Send booking_made notification now that payment is confirmed
+    const shop = this.store.shops.get(booking.shopId);
+    const shopName = shop?.name ?? booking.shopId;
+    const start = new Date(booking.startTime);
+    const dateStr = start.toLocaleDateString('en-MY', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      timeZone: 'Asia/Kuala_Lumpur',
+    });
+    const timeStr = start.toLocaleTimeString('en-MY', {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'Asia/Kuala_Lumpur',
+    });
+    this.notificationsService.add(
+      booking.customerId,
+      'booking_made',
+      id,
+      `Booking confirmed at ${shopName} on ${dateStr} at ${timeStr}.`,
+    );
 
     return updated;
   }
@@ -208,14 +253,21 @@ export class BookingsService {
       start.getTime() + service.durationMinutes * 60000,
     ).toISOString();
 
-    const conflict = Array.from(this.store.bookings.values()).find(
-      (b) =>
-        b.id !== id &&
-        b.barberId === booking.barberId &&
-        b.status !== 'cancelled' &&
+    const now = Date.now();
+    const conflict = Array.from(this.store.bookings.values()).find((b) => {
+      if (b.id === id) return false;
+      if (b.barberId !== booking.barberId) return false;
+      if (b.status === 'cancelled') return false;
+      // Skip expired pending_payment holds
+      if (b.status === 'pending_payment') {
+        const expiresAtMs = b.expiresAt ? new Date(b.expiresAt).getTime() : 0;
+        if (expiresAtMs > 0 && expiresAtMs <= now) return false;
+      }
+      return (
         new Date(b.startTime) < new Date(endTime) &&
-        new Date(b.endTime) > start,
-    );
+        new Date(b.endTime) > start
+      );
+    });
     if (conflict) throw new BadRequestException('This time slot is already booked');
 
     const updated: Booking = {
@@ -251,6 +303,47 @@ export class BookingsService {
   }
 
   cancel(id: string): Booking {
-    return this.updateStatus(id, 'cancelled');
+    this.store.expireUnpaidBookings();
+    const booking = this.store.bookings.get(id);
+    if (!booking) throw new NotFoundException(`Booking ${id} not found`);
+
+    // Unpaid hold - just cancel, no refund logic needed
+    if (booking.status === 'pending_payment') {
+      const updated: Booking = {
+        ...booking,
+        status: 'cancelled',
+        paymentStatus: 'failed',
+        updatedAt: new Date().toISOString(),
+      };
+      this.store.bookings.set(id, updated);
+      return updated;
+    }
+
+    // Paid booking - apply refund cutoff rule
+    let paymentStatus = booking.paymentStatus;
+    if (booking.paymentStatus === 'paid') {
+      const hoursUntilStart =
+        (new Date(booking.startTime).getTime() - Date.now()) / (1000 * 60 * 60);
+      paymentStatus = hoursUntilStart > REFUND_CUTOFF_HOURS ? 'refund_pending' : booking.paymentStatus;
+    }
+
+    const updated: Booking = {
+      ...booking,
+      status: 'cancelled',
+      paymentStatus,
+      updatedAt: new Date().toISOString(),
+    };
+    this.store.bookings.set(id, updated);
+
+    const shop = this.store.shops.get(booking.shopId);
+    const shopName = shop?.name ?? booking.shopId;
+    this.notificationsService.add(
+      booking.customerId,
+      'booking_cancelled',
+      id,
+      `Your booking at ${shopName} has been cancelled.`,
+    );
+
+    return updated;
   }
 }

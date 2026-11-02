@@ -8,7 +8,7 @@
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main",
     "lint": "tsc --noEmit",
-    "test": "node --test test/auth-otp.test.js test/shops-radius.test.js"
+    "test": "node --test test/auth-otp.test.js test/shops-radius.test.js test/payments.test.js"
   },
   "dependencies": {
     "@cutmyhair/shared": "*",

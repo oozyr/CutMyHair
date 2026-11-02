@@ -1,4 +1,5 @@
 export type BookingStatus =
+  | 'pending_payment'
   | 'pending'
   | 'confirmed'
   | 'checked_in'
@@ -7,7 +8,7 @@ export type BookingStatus =
 
 export type PaymentMethod = 'fpx' | 'card' | 'duitnow' | 'ewallet';
 
-export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
+export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded' | 'refund_pending';
 
 export interface Booking {
   id: string;
@@ -31,6 +32,11 @@ export interface Booking {
   status: BookingStatus;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
+
+  // Online payment lifecycle
+  expiresAt?: string; // ISO timestamp when payment hold expires
+  billId?: string;    // Billplz or mock payment bill ID
+  billUrl?: string;   // Payment checkout URL
 
   createdAt: string; // ISO
   updatedAt: string; // ISO

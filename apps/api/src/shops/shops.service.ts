@@ -2,7 +2,7 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { StoreService } from '../store/store.service';
 import { GEO_PROVIDER } from '../providers/geo/geo.tokens';
 import type { GeoProvider } from '../providers/geo/geo.provider.interface';
-import { isShopOpenNow } from '@cutmyhair/shared';
+import { isShopOpenNow, SERVICE_MARKUP_SEN } from '@cutmyhair/shared';
 
 @Injectable()
 export class ShopsService {
@@ -11,14 +11,20 @@ export class ShopsService {
     @Inject(GEO_PROVIDER) private readonly geoProvider: GeoProvider,
   ) {}
 
-  private getPriceRange(shopId: string): { minPrice: number | null; maxPrice: number | null } {
-    const prices = Array.from(this.store.services.values())
-      .filter((svc) => svc.shopId === shopId)
-      .map((svc) => svc.price);
-    if (prices.length === 0) return { minPrice: null, maxPrice: null };
+  private getPriceRange(shopId: string): { minPriceSen: number | null; maxPriceSen: number | null; minPrice: number | null; maxPrice: number | null } {
+    const services = Array.from(this.store.services.values()).filter(
+      (svc) => svc.shopId === shopId,
+    );
+    if (services.length === 0) {
+      return { minPriceSen: null, maxPriceSen: null, minPrice: null, maxPrice: null };
+    }
+    const rawPrices = services.map((svc) => svc.price);
+    const customerPrices = services.map((svc) => svc.price + SERVICE_MARKUP_SEN);
     return {
-      minPrice: Math.min(...prices),
-      maxPrice: Math.max(...prices),
+      minPriceSen: Math.min(...customerPrices),
+      maxPriceSen: Math.max(...customerPrices),
+      minPrice: Math.min(...rawPrices),
+      maxPrice: Math.max(...rawPrices),
     };
   }
 
@@ -37,7 +43,8 @@ export class ShopsService {
           rawDist,
           openNow: isShopOpenNow(shop),
           kind: shop.kind ?? 'shop',
-          minPriceSen: priceRange.minPrice,
+          minPriceSen: priceRange.minPriceSen,
+          maxPriceSen: priceRange.maxPriceSen,
           minPrice: priceRange.minPrice,
           maxPrice: priceRange.maxPrice,
         };
@@ -50,11 +57,15 @@ export class ShopsService {
   findOne(id: string) {
     const shop = this.store.shops.get(id);
     if (!shop) throw new NotFoundException(`Shop ${id} not found`);
+    const priceRange = this.getPriceRange(id);
     return {
       ...shop,
       openNow: isShopOpenNow(shop),
       kind: shop.kind ?? 'shop',
-      ...this.getPriceRange(shop.id),
+      minPriceSen: priceRange.minPriceSen,
+      maxPriceSen: priceRange.maxPriceSen,
+      minPrice: priceRange.minPrice,
+      maxPrice: priceRange.maxPrice,
     };
   }
 }

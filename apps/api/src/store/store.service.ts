@@ -37,4 +37,24 @@ export class StoreService {
     seedCustomers.forEach((c) => this.customers.set(c.id, c));
     seedReviews.forEach((r) => this.reviews.set(r.id, r));
   }
+
+  /**
+   * Lazily expires unpaid bookings whose payment hold window has passed.
+   * Expired bookings become cancelled with paymentStatus = failed.
+   */
+  expireUnpaidBookings(now: number = Date.now()): void {
+    for (const [id, b] of this.bookings.entries()) {
+      if (b.status === 'pending_payment' && b.paymentStatus !== 'paid') {
+        const expiresAtMs = b.expiresAt ? new Date(b.expiresAt).getTime() : 0;
+        if (expiresAtMs > 0 && expiresAtMs <= now) {
+          this.bookings.set(id, {
+            ...b,
+            status: 'cancelled',
+            paymentStatus: 'failed',
+            updatedAt: new Date(now).toISOString(),
+          });
+        }
+      }
+    }
+  }
 }

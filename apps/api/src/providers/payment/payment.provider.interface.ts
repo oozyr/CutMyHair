@@ -1,4 +1,4 @@
-export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
+export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded' | 'refund_pending';
 
 export interface CreatePaymentParams {
   bookingId: string;
@@ -6,6 +6,7 @@ export interface CreatePaymentParams {
   customerEmail: string;
   customerName: string;
   description: string;
+  paymentMethod?: string;
   callbackUrl?: string;
   redirectUrl?: string;
 }

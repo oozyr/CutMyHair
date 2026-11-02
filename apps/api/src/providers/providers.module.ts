@@ -1,17 +1,32 @@
 import { Global, Module, OnModuleInit } from '@nestjs/common';
 import { PAYMENT_PROVIDER } from './payment/payment.tokens';
 import { MockPaymentProvider } from './payment/mock-payment.provider';
+import { BillplzPaymentProvider } from './payment/billplz-payment.provider';
 import { GEO_PROVIDER } from './geo/geo.tokens';
 import { MockGeoProvider } from './geo/mock-geo.provider';
 import { OTP_SENDER } from './otp/otp.tokens';
 import { MockOtpSender } from './otp/mock-otp.sender';
+
+const BILLPLZ_KEYS = [
+  'BILLPLZ_BASE_URL',
+  'BILLPLZ_SECRET_KEY',
+  'BILLPLZ_XSIGNATURE_KEY',
+  'BILLPLZ_COLLECTION_ID',
+] as const;
 
 @Global()
 @Module({
   providers: [
     {
       provide: PAYMENT_PROVIDER,
-      useClass: MockPaymentProvider,
+      useFactory: () => {
+        const requested = (process.env.PAYMENT_PROVIDER || 'mock').toLowerCase();
+        const missingKeys = BILLPLZ_KEYS.filter((k) => !process.env[k]);
+        if (requested === 'billplz' && missingKeys.length === 0) {
+          return new BillplzPaymentProvider();
+        }
+        return new MockPaymentProvider();
+      },
     },
     {
       provide: GEO_PROVIDER,
@@ -32,13 +47,7 @@ export class ProvidersModule implements OnModuleInit {
   private checkAndLogProviders(): void {
     // 1. Payment Provider
     const requestedPayment = (process.env.PAYMENT_PROVIDER || 'mock').toLowerCase();
-    const billplzKeys = [
-      'BILLPLZ_BASE_URL',
-      'BILLPLZ_SECRET_KEY',
-      'BILLPLZ_XSIGNATURE_KEY',
-      'BILLPLZ_COLLECTION_ID',
-    ];
-    const missingBillplz = billplzKeys.filter((k) => !process.env[k]);
+    const missingBillplz = BILLPLZ_KEYS.filter((k) => !process.env[k]);
 
     if (requestedPayment === 'billplz') {
       if (missingBillplz.length > 0) {

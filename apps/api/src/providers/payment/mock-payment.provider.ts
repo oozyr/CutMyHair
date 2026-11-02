@@ -16,6 +16,7 @@ interface StoredMockPayment {
   customerName: string;
   status: PaymentStatus;
   createdAt: string;
+  returnUrl?: string;
 }
 
 @Injectable()
@@ -26,7 +27,7 @@ export class MockPaymentProvider implements PaymentProvider {
   async createPayment(params: CreatePaymentParams): Promise<CreatePaymentResult> {
     const paymentId = `mock-bill-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     const publicUrl = process.env.PUBLIC_API_URL || 'http://localhost:3000/api';
-    const paymentUrl = `${publicUrl}/payments/mock-checkout/${paymentId}`;
+    const paymentUrl = `${publicUrl}/payments/mock/${paymentId}`;
 
     this.payments.set(paymentId, {
       paymentId,
@@ -36,6 +37,7 @@ export class MockPaymentProvider implements PaymentProvider {
       customerName: params.customerName,
       status: 'pending',
       createdAt: new Date().toISOString(),
+      returnUrl: params.redirectUrl,
     });
 
     this.logger.log(`Created mock payment ${paymentId} for booking ${params.bookingId} (${params.amountSen} sen)`);
@@ -57,8 +59,8 @@ export class MockPaymentProvider implements PaymentProvider {
     if (!payment) {
       return { success: false, message: 'Payment record not found' };
     }
-    payment.status = 'refunded';
-    this.logger.log(`Refunded mock payment ${paymentId}`);
+    payment.status = 'refund_pending';
+    this.logger.log(`Refund requested for mock payment ${paymentId} - marked as refund_pending`);
     return { success: true };
   }
 
@@ -88,6 +90,18 @@ export class MockPaymentProvider implements PaymentProvider {
     }
     payment.status = 'paid';
     this.logger.log(`Manually marked mock payment ${paymentId} as paid`);
+    return true;
+  }
+
+  getPayment(paymentId: string): StoredMockPayment | undefined {
+    return this.payments.get(paymentId);
+  }
+
+  markAsFailed(paymentId: string): boolean {
+    const payment = this.payments.get(paymentId);
+    if (!payment) return false;
+    payment.status = 'failed';
+    this.logger.log(`Manually marked mock payment ${paymentId} as failed`);
     return true;
   }
 }

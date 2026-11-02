@@ -24,6 +24,16 @@ export const NOSHOW_DEPOSIT_SPLIT = {
   cutmyhair: 30,
 } as const;
 
+/**
+ * Time window in minutes to complete payment before a booking slot hold expires.
+ */
+export const PAYMENT_HOLD_MINUTES = 10;
+
+/**
+ * Hours before booking start time after which cancellation cannot be refunded.
+ */
+export const REFUND_CUTOFF_HOURS = 2;
+
 export interface BookingAmounts {
   /** Base service price set by shop in sen */
   servicePriceSen: number;

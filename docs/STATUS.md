@@ -39,12 +39,20 @@ All routes use the global `/api` prefix.
 
 ### Stub Modules
 - `GET /api/analytics`: Returns stub message ("Analytics coming soon.").
-- `GET /api/payments/status`: Returns stub message ("Payments stub. Pay at shop only for the demo.").
+
+### Payment Endpoints (real)
+- `POST /api/payments/:bookingId/start`: Initiates payment via provider, returns `{ paymentUrl, paymentId }`.
+- `POST /api/payments/:bookingId/sync`: Polls provider status and updates booking (paid or failed).
+- `POST /api/payments/billplz/callback`: Billplz form-encoded webhook, verifies x_signature (401 on failure), idempotent.
+- `GET /api/payments/return`: Post-payment redirect, allows only `exp://` and `cutmyhair://` targets.
+- `GET /api/payments/mock/:paymentId`: Mock checkout HTML page with Pay and Fail buttons.
+- `POST /api/payments/mock/:paymentId/pay`: Marks mock payment paid, confirms booking, redirects.
+- `POST /api/payments/mock/:paymentId/fail`: Marks mock payment failed, cancels booking, redirects.
 
 ## 3. packages/shared
 - **Data Types**: `Shop`, `WeeklyHours`, `DayHours`, `Break`, `Barber`, `Service`, `Booking`, `BookingStatus`, `PaymentMethod` (fpx, card, duitnow, ewallet), `PaymentStatus`, `Customer`, `CustomerPreferences`, `Review`, `AvailabilitySlot`, and design tokens.
 - **Money System**: All money stored as integer sen (RM 1 = 100 sen). Helper functions: `formatSen`, `senToRm`, `rmToSen`.
-- **Financial Settings**: `SERVICE_MARKUP_SEN` (500), `PLATFORM_FEE_PERCENT` (3%), `NOSHOW_DEPOSIT_SPLIT` (70/30).
+- **Financial Settings**: `SERVICE_MARKUP_SEN` (500), `PLATFORM_FEE_PERCENT` (3%), `NOSHOW_DEPOSIT_SPLIT` (70/30), `PAYMENT_HOLD_MINUTES` (10), `REFUND_CUTOFF_HOURS` (2).
 - **Pricing Function**: `calculateBookingAmounts(servicePriceSen)` returns `servicePriceSen`, `markupSen`, `customerTotalSen`, `platformFeeSen`, and `shopPayoutSen`.
 - **Subscription Plans**: Base (RM39/mo, 2 barbers), Pro (RM79/mo, 4 barbers), Max (RM119/mo, 6 barbers) with comprehensive feature flags.
 - **Seed Data**: 20 fictional barbershops and 3 freelance barbers (all `isDemo: true`), 46 barbers, 96 services (prices in sen), 4 shops placed outside 10km for radius testing, 5 customers, 6 relative bookings, and 2 reviews.
@@ -92,7 +100,9 @@ All routes use the global `/api` prefix.
 | Barber: Staff Management | Not started | Web UI not started. |
 | Barber: Store Profile Management | Not started | Web UI not started. |
 | Auth: Email OTP & Session Token | Done | API endpoints for request-otp and verify-otp, session token, CustomerAuthGuard. |
-| Payments: Provider Abstraction | Done | PaymentProvider interface with MockPaymentProvider, fail-safe fallback logging. |
+| Payments: Provider Abstraction | Done | PaymentProvider interface with MockPaymentProvider and BillplzPaymentProvider; factory switches on env vars. |
+| Payments: Online Payment Flow | Done | pending_payment status, 10min hold, lazy expiry, start/sync/callback/return endpoints, mock checkout page. |
+| Payments: Refund Rule | Done | refund_pending if cancelled >2h before start; no refund within 2h. Billplz refunds manual via dashboard. |
 | Subscriptions & Plans (Base/Pro/Max) | Done | Shared plan definitions with feature flags, GET /api/plans returns real plans. |
 | Commission Tracking | Stub | `signedUpViaShopId` in customer model; financial calculations implemented. |
 | Email / Calendar Stubs | Stub | OtpSender mock logs to server console. |
@@ -121,13 +131,14 @@ npm run dev:mobile # Expo customer app (press a for Android, w for web)
 ```
 
 ## Summary
-- Financial model updated to integer sen with calculateBookingAmounts pure function and unit tests.
+- Financial model updated to integer sen with `calculateBookingAmounts` pure function and unit tests.
 - 3 subscription plans (Base, Pro, Max) with feature flags added to shared and returned by GET /api/plans.
-- DI-swappable providers for Payments, Geolocation, and OTP created with fail-safe mock fallback.
+- DI-swappable providers: MockPaymentProvider (default), BillplzPaymentProvider (when 4 BILLPLZ_ keys set), MockGeoProvider, MockOtpSender. Factory switches on env vars at startup.
 - Email OTP authentication flow with HMAC session tokens and CustomerAuthGuard added to API.
 - Booking routes in mobile separated into /booking/new/[shopId] and /booking/detail/[id] to resolve route collisions.
 - Seed data expanded to 20 fictional shops and 3 freelance barbers with varied hours, realistic services, and 4 shops outside 10km for radius testing.
-- GET /api/shops supports lat, lng, radiusKm with distance sorting, openNow, kind, and minPriceSen.
+- GET /api/shops supports lat, lng, radiusKm with distance sorting, openNow, kind, and minPriceSen (customer price).
 - Real Map tab implemented with react-native-maps, 10km radius circle, freelance area circles, shop pins, bottom preview card, and pan area searching.
 - Shared LocationContext with expo-location fallback to Cheras coordinates wired into Home and Map tabs.
 - app.json converted to app.config.js reading GOOGLE_MAPS_API_KEY from environment with graceful default fallback for Expo Go.
+- Online payment flow: POST /api/bookings creates pending_payment with 10min hold; start/sync/callback/return endpoints; Billplz x_signature verification; mock checkout page with Pay/Fail buttons; cancel refund rule (refund_pending if >2h, none if within 2h). All 28 tests pass.

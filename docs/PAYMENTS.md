@@ -1,0 +1,114 @@
+# CutMyHair Payment Integration
+
+## Overview
+
+Payments use the **Billplz** gateway (sandbox now, production by env var only).
+Without Billplz keys, the API falls back to a **mock** provider with an in-browser checkout page.
+
+---
+
+## Booking Payment Lifecycle
+
+```
+POST /api/bookings
+  -> status: pending_payment, paymentStatus: pending
+  -> slot held for PAYMENT_HOLD_MINUTES (10 min)
+
+POST /api/payments/:bookingId/start
+  -> calls provider.createPayment()
+  -> returns { paymentUrl, paymentId }
+  -> customer opens paymentUrl in browser/webview
+
+[Customer pays on Billplz or mock page]
+
+Billplz POST /api/payments/billplz/callback  (webhook)
+  or
+POST /api/payments/:bookingId/sync           (poll fallback)
+  -> if paid: status = confirmed, paymentStatus = paid, sends booking_made notification
+  -> if failed: status = cancelled, paymentStatus = failed
+
+GET /api/payments/return?returnUrl=...
+  -> redirects to app (exp:// or cutmyhair:// only)
+  -> anything else shows a static "return to the app" page
+```
+
+Expired unpaid holds (past `expiresAt`) are cancelled lazily whenever bookings or slots are read.
+
+---
+
+## Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/payments/:bookingId/start` | Start payment, returns `{ paymentUrl, paymentId }` |
+| POST | `/api/payments/:bookingId/sync` | Poll provider status and update booking |
+| POST | `/api/payments/billplz/callback` | Billplz webhook (form-encoded, x_signature verified) |
+| GET  | `/api/payments/return` | Post-payment redirect landing page |
+| GET  | `/api/payments/mock/:paymentId` | Mock checkout page (mock mode only) |
+| POST | `/api/payments/mock/:paymentId/pay` | Simulate successful payment (mock mode only) |
+| POST | `/api/payments/mock/:paymentId/fail` | Simulate failed payment (mock mode only) |
+
+---
+
+## Cancellation and Refunds
+
+- Cancelled more than `REFUND_CUTOFF_HOURS` (2h) before start: `paymentStatus = refund_pending`
+- Cancelled within 2h of start: no refund, `paymentStatus` unchanged
+- Unpaid holds cancelled before payment: `paymentStatus = failed`
+
+Billplz refunds require manual action via the Billplz dashboard.
+The API marks the booking `refund_pending` and logs a message for the ops team.
+
+---
+
+## Switching to Billplz
+
+Set these env vars in `apps/api/.env`:
+
+```
+PAYMENT_PROVIDER=billplz
+BILLPLZ_BASE_URL=https://www.billplz-sandbox.com/api
+BILLPLZ_SECRET_KEY=your-secret-key
+BILLPLZ_XSIGNATURE_KEY=your-xsignature-key
+BILLPLZ_COLLECTION_ID=your-collection-id
+PUBLIC_API_URL=https://your-api-domain.com/api
+```
+
+For production, change `BILLPLZ_BASE_URL` to `https://www.billplz.com/api`.
+If any Billplz key is missing, the API falls back to mock mode automatically and logs the missing keys at startup.
+
+---
+
+## Billplz x_signature Verification
+
+Billplz signs each callback with HMAC-SHA256:
+
+1. Take all form fields from the POST body
+2. Remove `x_signature`
+3. Sort remaining keys alphabetically (case-insensitive)
+4. Concatenate each as `key + value` (no separator within a pair)
+5. Join all pairs with `|`
+6. HMAC-SHA256 using `BILLPLZ_XSIGNATURE_KEY` (hex digest)
+7. Compare with `timingSafeEqual` to prevent timing attacks
+
+Invalid signatures return HTTP 401.
+
+---
+
+## Payment Method Pre-selection
+
+Billplz supports pre-selecting FPX via `reference_1` (a specific bank code) plus `auto_submit=true`.
+Since the app collects a payment method type (`fpx`, `card`, `duitnow`, `ewallet`) but not a specific FPX bank code, true pre-selection is not possible. The chosen method is stored on the booking. `auto_submit=true` is appended to all bill URLs. The Billplz page shows its own method selection UI, which is acceptable for the sandbox demo.
+
+---
+
+## Constants
+
+Defined in `packages/shared/src/settings.ts`:
+
+| Constant | Value | Meaning |
+|----------|-------|---------|
+| `PAYMENT_HOLD_MINUTES` | 10 | Minutes a slot is held while payment is pending |
+| `REFUND_CUTOFF_HOURS` | 2 | Hours before start within which no refund is issued |
+| `SERVICE_MARKUP_SEN` | 500 | Flat markup (RM 5.00) added to every service price for customers |
+| `PLATFORM_FEE_PERCENT` | 3 | Platform fee percentage on base service price |
