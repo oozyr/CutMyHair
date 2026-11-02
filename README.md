@@ -1,51 +1,31 @@
 # CutMyHair
 
-Barber discovery, booking, and management app for Cheras, Kuala Lumpur.
+CutMyHair is a modern barbershop discovery, booking, and payment platform built for Malaysia, starting in Cheras, Kuala Lumpur.
 
-## Prerequisites
+It connects customers looking for fresh cuts with local barbershops through two focused products:
+1. **Customer Mobile App**: Explore nearby shops, compare pricing, book precise appointment slots, pay online, and check in via QR code.
+2. **Barber Web Dashboard**: Manage bookings, barber schedules, shop profiles, and services from any browser.
 
-- Node.js 20+
-- Yarn 1.22+
-- Expo Go app on phone (for mobile dev)
+---
 
-## Install
+## What It Does
 
-```bash
-yarn install
-```
+### For Customers
+- **Find Local Barbers**: Browse verified barbershops within 10 km on an interactive map or list with clear starting prices.
+- **Transparent Booking**: Choose a specific barber or select "any barber" to find the earliest slot. Slots match service duration with zero guesswork.
+- **Pay Online**: Secure payments via Billplz with FPX online banking, cards, and e-wallets. Transparent pricing with a flat RM5 booking fee and no hidden charges.
+- **Quick Check-In**: Arrive at the shop and display your in-app QR code for instant check-in.
+- **Bilingual**: Fully supported in Bahasa Malaysia and English.
 
-## Run
+### For Barbershops
+- **Digital Appointments**: Eliminate double-bookings and reduce phone calls with automated real-time slot management.
+- **Upfront Revenue**: Reduce no-shows through online payments and guaranteed slot reservations.
+- **Shop Management**: Simple tools to manage business hours, barber rosters, services, and shop details.
 
-```bash
-# API (NestJS) -- http://localhost:3000
-yarn dev:api
+---
 
-# Web dashboard (Next.js) -- http://localhost:3001
-yarn dev:web
+## Copyright and License
 
-# Mobile app (Expo)
-yarn dev:mobile
-```
+Copyright (c) 2026 CutMyHair. All rights reserved.
 
-## Project structure
-
-```
-apps/
-  api/      NestJS in-memory API (demo, no database yet)
-  web/      Next.js barber dashboard PWA
-  mobile/   Expo React Native customer app
-packages/
-  shared/   TypeScript types, seed data, design tokens, helpers
-legacy/     Old Flutter + Firebase project. Reference only, do not modify.
-```
-
-## Environment variables
-
-Copy `.env.example` to `.env` in each app directory and fill in values.
-
-## Testing on phone via Expo Go
-
-1. Find PC Wi-Fi IP on Windows: Open PowerShell and run `ipconfig`. Find your IPv4 Address under your Wi-Fi adapter (for example, `192.168.1.50`).
-2. Set it in `apps/mobile/.env`: Change `EXPO_PUBLIC_API_URL` to `http://<YOUR_PC_IP>:3000/api` (for example, `http://192.168.1.50:3000/api`).
-3. Start the API: Run `npm run dev:api` (or `yarn dev:api`) in a terminal.
-4. Allow through Windows Firewall: Run PowerShell as Administrator and run `New-NetFirewallRule -DisplayName "CutMyHair API" -Direction Inbound -LocalPort 3000 -Protocol TCP -Action Allow` (or accept the Windows Security Prompt when Node starts).
+This software and associated documentation are proprietary and confidential. Unauthorized copying, distribution, modification, reverse engineering, or commercial use of any part of this repository is strictly prohibited without prior written permission from CutMyHair.
