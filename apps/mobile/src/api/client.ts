@@ -23,6 +23,7 @@ export type ShopWithDistance = Shop & {
   minPrice?: number | null;
   maxPrice?: number | null;
   minPriceSen?: number | null;
+  maxPriceSen?: number | null;
   openNow?: boolean;
   kind?: 'shop' | 'freelance';
 };
@@ -40,6 +41,7 @@ export interface CreateBookingPayload {
   barberId: string;
   serviceId: string;
   startTime: string;
+  paymentMethod: string;
 }
 
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
@@ -165,6 +167,20 @@ export const api = {
   async markAllNotificationsRead(customerId: string): Promise<{ success: boolean }> {
     return request<{ success: boolean }>(
       `/notifications/read-all?customerId=${encodeURIComponent(customerId)}`,
+      { method: 'POST' },
+    );
+  },
+
+  async startPayment(bookingId: string): Promise<{ paymentUrl: string; paymentId: string }> {
+    return request<{ paymentUrl: string; paymentId: string }>(
+      `/payments/${bookingId}/start`,
+      { method: 'POST' },
+    );
+  },
+
+  async syncPayment(bookingId: string): Promise<{ status: string; bookingStatus: string }> {
+    return request<{ status: string; bookingStatus: string }>(
+      `/payments/${bookingId}/sync`,
       { method: 'POST' },
     );
   },

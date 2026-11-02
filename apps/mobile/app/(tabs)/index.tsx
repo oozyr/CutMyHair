@@ -18,7 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, radius, shadow } from '@/theme';
 import { useLanguage } from '@/i18n';
 import { api, type ShopWithDistance } from '@/api';
-import { formatSen } from '@cutmyhair/shared';
+import { formatSen, SERVICE_MARKUP_SEN } from '@cutmyhair/shared';
 import { useLocation } from '@/context/LocationContext';
 
 const CHERAS_LAT = 3.139;
@@ -182,9 +182,9 @@ export default function HomeScreen() {
                         <Text style={styles.featuredAddress} numberOfLines={1}>
                           {shop.address}
                         </Text>
-                        {shop.minPrice != null && shop.maxPrice != null && (
+                        {(shop.minPriceSen != null || shop.minPrice != null) && (
                           <Text style={styles.priceRangeText}>
-                            {`${formatSen(shop.minPrice)} - ${formatSen(shop.maxPrice)}`}
+                            {`${formatSen(shop.minPriceSen ?? (shop.minPrice! + SERVICE_MARKUP_SEN))} - ${formatSen(shop.maxPriceSen ?? (shop.maxPrice! + SERVICE_MARKUP_SEN))}`}
                           </Text>
                         )}
                         {shop.distanceKm !== undefined && (
@@ -276,9 +276,9 @@ export default function HomeScreen() {
                         <Text style={styles.gridShopName} numberOfLines={2}>
                           {shop.name}
                         </Text>
-                        {shop.minPrice != null && shop.maxPrice != null && (
+                        {(shop.minPriceSen != null || shop.minPrice != null) && (
                           <Text style={styles.gridPriceRangeText}>
-                            {`${formatSen(shop.minPrice)} - ${formatSen(shop.maxPrice)}`}
+                            {`${formatSen(shop.minPriceSen ?? (shop.minPrice! + SERVICE_MARKUP_SEN))} - ${formatSen(shop.maxPriceSen ?? (shop.maxPrice! + SERVICE_MARKUP_SEN))}`}
                           </Text>
                         )}
                         {shop.distanceKm !== undefined && (

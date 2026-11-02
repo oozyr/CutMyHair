@@ -16,7 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, radius, shadow } from '@/theme';
 import { useLanguage } from '@/i18n';
 import { api } from '@/api';
-import { formatSen, type Booking, type Shop, type Barber, type Service, type AvailabilitySlot } from '@cutmyhair/shared';
+import { formatSen, REFUND_CUTOFF_HOURS, type Booking, type Shop, type Barber, type Service, type AvailabilitySlot } from '@cutmyhair/shared';
 import { DateTimeSlotPicker, formatSlotTime } from '@/components/DateTimeSlotPicker';
 import { CheckInQRModal } from '@/components/CheckInQRModal';
 
@@ -46,6 +46,7 @@ function formatBookingTimeRange(startIso: string, endIso: string): string {
 function getStatusBadgeStyle(status: Booking['status']) {
   switch (status) {
     case 'pending':
+    case 'pending_payment':
       return { bg: '#FEF3C7', text: colors.statusPending };
     case 'confirmed':
       return { bg: '#DBEAFE', text: colors.statusConfirmed };
@@ -56,6 +57,50 @@ function getStatusBadgeStyle(status: Booking['status']) {
     case 'cancelled':
     default:
       return { bg: '#F3F4F6', text: colors.statusCancelled };
+  }
+}
+
+function getPaymentStatusBadgeStyle(status: Booking['paymentStatus']) {
+  switch (status) {
+    case 'paid':
+      return { bg: '#D1FAE5', text: colors.success };
+    case 'refund_pending':
+      return { bg: '#DBEAFE', text: colors.statusConfirmed };
+    case 'failed':
+      return { bg: '#FEE2E2', text: colors.error };
+    case 'pending':
+    default:
+      return { bg: '#FEF3C7', text: colors.statusPending };
+  }
+}
+
+function getPaymentStatusLabel(status: Booking['paymentStatus'], t: (k: string) => string): string {
+  switch (status) {
+    case 'paid':
+      return t('bookingDetail.paymentStatusPaid');
+    case 'pending':
+      return t('bookingDetail.paymentStatusPending');
+    case 'refund_pending':
+      return t('bookingDetail.paymentStatusRefundPending');
+    case 'failed':
+      return t('bookingDetail.paymentStatusFailed');
+    default:
+      return status;
+  }
+}
+
+function getPaymentMethodLabel(method: Booking['paymentMethod'], t: (k: string) => string): string {
+  switch (method) {
+    case 'fpx':
+      return t('booking.fpx');
+    case 'card':
+      return t('booking.card');
+    case 'duitnow':
+      return t('booking.duitnow');
+    case 'ewallet':
+      return t('booking.ewallet');
+    default:
+      return method || '';
   }
 }
 
@@ -153,12 +198,22 @@ function BookingDetailScreen({ bookingId }: { bookingId: string }) {
   // Handle Cancel
   function handleCancelPress() {
     if (!booking) return;
+
+    const hoursUntilStart =
+      (new Date(booking.startTime).getTime() - Date.now()) / (1000 * 60 * 60);
+    const refundApplies = booking.paymentStatus === 'paid' && hoursUntilStart > REFUND_CUTOFF_HOURS;
+    const policyMsg = refundApplies
+      ? t('bookingDetail.cancelWithRefundMessage', { hours: REFUND_CUTOFF_HOURS })
+      : t('bookingDetail.cancelNoRefundMessage', { hours: REFUND_CUTOFF_HOURS });
+
+    const message = `${t('bookingDetail.cancelConfirmMessage', {
+      barber: barber?.name || '',
+      shop: shop?.name || '',
+    })}\n\n${policyMsg}`;
+
     Alert.alert(
       t('bookingDetail.cancelConfirmTitle'),
-      t('bookingDetail.cancelConfirmMessage', {
-        barber: barber?.name || '',
-        shop: shop?.name || '',
-      }),
+      message,
       [
         { text: t('bookingDetail.cancelKeep'), style: 'cancel' },
         {
@@ -368,21 +423,70 @@ function BookingDetailScreen({ bookingId }: { bookingId: string }) {
 
           <View style={styles.cardDivider} />
 
-          {/* Price & Payment */}
+          {/* Price */}
           <View style={styles.detailRow}>
             <View style={styles.detailIcon}>
               <Ionicons name="cash-outline" size={20} color={colors.textSecondary} />
             </View>
             <View style={styles.detailTextWrap}>
               <Text style={styles.detailLabel}>{t('bookingDetail.price')}</Text>
-              <Text style={styles.priceValue}>{formatSen(booking.price)}</Text>
-              <View style={styles.payAtShopRow}>
-                <Ionicons name="checkmark-circle-outline" size={14} color={colors.success} />
-                <Text style={styles.payAtShopText}>{t('bookingDetail.payAtShop')}</Text>
+              <Text style={styles.priceValue}>{formatSen(booking.customerTotalSen || booking.price)}</Text>
+            </View>
+          </View>
+
+          <View style={styles.cardDivider} />
+
+          {/* Payment Method */}
+          <View style={styles.detailRow}>
+            <View style={styles.detailIcon}>
+              <Ionicons name="card-outline" size={20} color={colors.textSecondary} />
+            </View>
+            <View style={styles.detailTextWrap}>
+              <Text style={styles.detailLabel}>{t('bookingDetail.paymentMethod')}</Text>
+              <Text style={styles.detailValue}>{getPaymentMethodLabel(booking.paymentMethod, t)}</Text>
+            </View>
+          </View>
+
+          <View style={styles.cardDivider} />
+
+          {/* Payment Status */}
+          <View style={styles.detailRow}>
+            <View style={styles.detailIcon}>
+              <Ionicons name="information-circle-outline" size={20} color={colors.textSecondary} />
+            </View>
+            <View style={styles.detailTextWrap}>
+              <Text style={styles.detailLabel}>{t('bookingDetail.paymentStatus')}</Text>
+              <View style={[styles.paymentBadge, { backgroundColor: getPaymentStatusBadgeStyle(booking.paymentStatus).bg }]}>
+                <Text style={[styles.paymentBadgeText, { color: getPaymentStatusBadgeStyle(booking.paymentStatus).text }]}>
+                  {getPaymentStatusLabel(booking.paymentStatus, t)}
+                </Text>
               </View>
             </View>
           </View>
         </View>
+
+        {/* Continue Payment Button if pending_payment */}
+        {booking.status === 'pending_payment' && !isCancelled && !isPast && (
+          <View style={styles.actionCard}>
+            <TouchableOpacity
+              style={styles.continuePaymentButton}
+              onPress={() => {
+                router.push({
+                  pathname: '/booking/payment/[bookingId]' as any,
+                  params: {
+                    bookingId: booking.id,
+                    expiresAt: booking.expiresAt || '',
+                    totalSen: String(booking.customerTotalSen || booking.price),
+                  },
+                });
+              }}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="card" size={20} color={colors.textInverse} />
+              <Text style={styles.continuePaymentButtonText}>{t('bookingDetail.continuePayment')}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Action 1: Check In */}
         {!isCancelled && !isCompleted && !isPast && (
@@ -708,6 +812,33 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.xl,
     color: colors.accent,
     marginTop: 2,
+  },
+  paymentBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[1],
+    borderRadius: radius.full,
+    marginTop: 4,
+  },
+  paymentBadgeText: {
+    fontFamily: typography.fontFamily.bold,
+    fontSize: typography.fontSize.xs,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  continuePaymentButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.accent,
+    paddingVertical: spacing[4],
+    borderRadius: radius.lg,
+    gap: spacing[2],
+  },
+  continuePaymentButtonText: {
+    fontFamily: typography.fontFamily.bold,
+    fontSize: typography.fontSize.md,
+    color: colors.textInverse,
   },
   payAtShopRow: {
     flexDirection: 'row',

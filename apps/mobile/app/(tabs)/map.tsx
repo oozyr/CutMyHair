@@ -16,7 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, radius, shadow } from '@/theme';
 import { useLanguage } from '@/i18n';
 import { api, type ShopWithDistance } from '@/api';
-import { formatSen, distanceKm } from '@cutmyhair/shared';
+import { formatSen, distanceKm, SERVICE_MARKUP_SEN } from '@cutmyhair/shared';
 import { useLocation } from '@/context/LocationContext';
 
 const SEARCH_RADIUS_METERS = 10000; // 10 km
@@ -320,10 +320,10 @@ export default function MapScreen() {
                     </View>
                   )}
 
-                  {selectedShop.minPriceSen != null && (
+                  {(selectedShop.minPriceSen != null || selectedShop.minPrice != null) && (
                     <Text style={styles.fromPriceText}>
                       {t('map.fromPrice', {
-                        price: formatSen(selectedShop.minPriceSen),
+                        price: formatSen(selectedShop.minPriceSen ?? (selectedShop.minPrice! + SERVICE_MARKUP_SEN)),
                       })}
                     </Text>
                   )}

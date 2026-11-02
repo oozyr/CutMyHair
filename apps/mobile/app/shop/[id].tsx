@@ -15,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, radius, shadow } from '@/theme';
 import { useLanguage } from '@/i18n';
 import { api } from '@/api';
-import { formatSen, type Shop, type Service, type Barber, type Review } from '@cutmyhair/shared';
+import { formatSen, SERVICE_MARKUP_SEN, type Shop, type Service, type Barber, type Review } from '@cutmyhair/shared';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -354,7 +354,7 @@ export default function ShopDetailScreen() {
                         {svc.durationMinutes} {t('shopDetail.min')}
                       </Text>
                     </View>
-                    <Text style={styles.servicePrice}>{formatSen(svc.price)}</Text>
+                    <Text style={styles.servicePrice}>{formatSen(svc.customerPriceSen ?? (svc.price + SERVICE_MARKUP_SEN))}</Text>
                   </View>
                 ))}
               </View>

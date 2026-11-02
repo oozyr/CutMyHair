@@ -61,14 +61,15 @@ All routes use the global `/api` prefix.
 ## 4. apps/mobile Screens and Routes
 - `app/_layout.tsx`: Root Stack provider, font loading, NotificationProvider, LocationProvider. (Done)
 - `app/(tabs)/_layout.tsx`: Tab navigation with unread notification badge on Inbox icon. (Done)
-- `app/(tabs)/index.tsx` (`/`): Home tab with dynamic greeting, featured shops row, nearby shops grid, device location integration. (Done)
-- `app/(tabs)/map.tsx` (`/map`): Map tab with react-native-maps, 10km radius circle, pins for shops, 500m circles for freelance, bottom detail card, and search this area button. (Done)
+- `app/(tabs)/index.tsx` (`/`): Home tab with dynamic greeting, featured shops row, nearby shops grid, customer prices, device location integration. (Done)
+- `app/(tabs)/map.tsx` (`/map`): Map tab with react-native-maps, 10km radius circle, pins for shops, 500m circles for freelance, customer min price, bottom detail card, and search this area button. (Done)
 - `app/(tabs)/cutmyhair.tsx` (`/cutmyhair`): CutMyHair tab with My QR and Feeling Lucky. Shows relative upcoming seed booking on fresh start. (Done)
-- `app/(tabs)/inbox.tsx` (`/inbox`): Inbox tab with Upcoming bookings, Completed bookings with review sheet, and Notifications with unread indicators. (Done)
+- `app/(tabs)/inbox.tsx` (`/inbox`): Inbox tab with Upcoming bookings (including pending_payment holds with Awaiting payment badge and Continue payment button), Completed bookings with review sheet, and Notifications with unread indicators. (Done)
 - `app/(tabs)/profile.tsx` (`/profile`): Language toggle (English / Bahasa Malaysia) with persistent state. (Partial)
-- `app/shop/[id].tsx` (`/shop/:id`): Shop detail screen with photo gallery, operating hours with break validation, tabs for services, barbers, reviews, and Book button. (Done)
-- `app/booking/new/[shopId].tsx` (`/booking/new/:shopId`): 4-step booking wizard (Service, Barber / Any Barber, 14-day date strip with slot availability, Summary with Pay at shop confirmation). (Done)
-- `app/booking/detail/[id].tsx` (`/booking/detail/:id`): Booking detail screen with check-in QR modal, reschedule modal with slot picker, and cancel flow. (Done)
+- `app/shop/[id].tsx` (`/shop/:id`): Shop detail screen with photo gallery, customer prices, operating hours with break validation, tabs for services, barbers, reviews, and Book button. (Done)
+- `app/booking/new/[shopId].tsx` (`/booking/new/:shopId`): 4-step booking wizard (Service, Barber / Any Barber, 14-day date strip with slot availability, Summary with payment method picker, fee breakdown, cancellation policy, and payment trigger). (Done)
+- `app/booking/payment/[bookingId].tsx` (`/booking/payment/:bookingId`): Payment screen with hold timer countdown, WebBrowser auth session checkout, sync verification, and retry/change-method states. (Done)
+- `app/booking/detail/[id].tsx` (`/booking/detail/:id`): Booking detail screen with payment method, payment status, cancellation refund notice, check-in QR modal, and reschedule flow. (Done)
 - `app/booking/success.tsx` (`/booking/success`): Booking confirmation screen showing appointment summary. (Done)
 
 ## 5. apps/web Pages and Routes
@@ -142,3 +143,4 @@ npm run dev:mobile # Expo customer app (press a for Android, w for web)
 - Shared LocationContext with expo-location fallback to Cheras coordinates wired into Home and Map tabs.
 - app.json converted to app.config.js reading GOOGLE_MAPS_API_KEY from environment with graceful default fallback for Expo Go.
 - Online payment flow: POST /api/bookings creates pending_payment with 10min hold; start/sync/callback/return endpoints; Billplz x_signature verification; mock checkout page with Pay/Fail buttons; cancel refund rule (refund_pending if >2h, none if within 2h). All 28 tests pass.
+- Customer mobile online payment: customerPriceSen used across all screens; payment method selector (FPX, Card, DuitNow, E-wallet); WebBrowser auth session checkout; hold timer countdown with expiration handling; Inbox pending_payment badge with continue payment; booking details payment method and status badges; cancellation refund notice.

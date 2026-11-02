@@ -31,6 +31,7 @@ module.exports = {
       'expo-status-bar',
       'expo-localization',
       'expo-location',
+      'expo-web-browser',
     ],
     experiments: {
       typedRoutes: true,

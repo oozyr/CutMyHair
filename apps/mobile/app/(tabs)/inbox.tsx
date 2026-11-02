@@ -57,6 +57,7 @@ function formatNotificationTime(isoStr: string): string {
 function getStatusBadge(status: Booking['status']) {
   switch (status) {
     case 'pending':
+    case 'pending_payment':
       return { bg: '#FEF3C7', text: colors.statusPending };
     case 'confirmed':
       return { bg: '#DBEAFE', text: colors.statusConfirmed };
@@ -125,6 +126,10 @@ export default function InboxScreen() {
       const now = Date.now();
       const filtered = bookings.filter((b) => {
         if (b.status === 'cancelled' || b.status === 'completed') return false;
+        if (b.status === 'pending_payment') {
+          const expiresAtMs = b.expiresAt ? new Date(b.expiresAt).getTime() : 0;
+          if (expiresAtMs <= now) return false;
+        }
         const endMs = new Date(b.endTime).getTime();
         return endMs > now;
       });
@@ -441,6 +446,27 @@ export default function InboxScreen() {
                         </View>
                         <Text style={styles.cardPrice}>{formatSen(b.price)}</Text>
                       </View>
+
+                      {b.status === 'pending_payment' && (
+                        <TouchableOpacity
+                          style={styles.continuePaymentBtn}
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            router.push({
+                              pathname: '/booking/payment/[bookingId]' as any,
+                              params: {
+                                bookingId: b.id,
+                                expiresAt: b.expiresAt || '',
+                                totalSen: String(b.customerTotalSen || b.price),
+                              },
+                            });
+                          }}
+                          activeOpacity={0.8}
+                        >
+                          <Ionicons name="card-outline" size={16} color={colors.textInverse} />
+                          <Text style={styles.continuePaymentBtnText}>{t('inbox.continuePayment')}</Text>
+                        </TouchableOpacity>
+                      )}
                     </TouchableOpacity>
                   );
                 }}
@@ -876,6 +902,21 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.bold,
     fontSize: typography.fontSize.md,
     color: colors.accent,
+  },
+  continuePaymentBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing[2],
+    backgroundColor: colors.accent,
+    borderRadius: radius.md,
+    paddingVertical: spacing[2],
+    marginTop: spacing[3],
+  },
+  continuePaymentBtnText: {
+    fontFamily: typography.fontFamily.bold,
+    fontSize: typography.fontSize.sm,
+    color: colors.textInverse,
   },
   reviewActionRow: {
     marginTop: spacing[3],
