@@ -3,7 +3,8 @@ export interface Service {
   shopId: string;
   name: string;
   nameMs: string;        // Bahasa Malaysia name
-  price: number;         // MYR
+  price: number;         // Price in integer sen (RM 1 = 100 sen)
+  priceSen?: number;     // Optional explicit sen field alias
   durationMinutes: number;
   description: string;
 }

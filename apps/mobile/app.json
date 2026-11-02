@@ -7,11 +7,6 @@
     "icon": "./assets/icon.png",
     "scheme": "cutmyhair",
     "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#1A1A2E"
-    },
     "assetBundlePatterns": [
       "**/*"
     ],

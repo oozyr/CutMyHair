@@ -5,7 +5,9 @@ export type BookingStatus =
   | 'completed'
   | 'cancelled';
 
-export type PaymentMethod = 'pay_at_shop';
+export type PaymentMethod = 'fpx' | 'card' | 'duitnow' | 'ewallet';
+
+export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
 
 export interface Booking {
   id: string;
@@ -15,9 +17,21 @@ export interface Booking {
   serviceId: string;
   startTime: string; // ISO datetime
   endTime: string;   // ISO datetime (startTime + durationMinutes)
-  price: number;     // MYR, snapshot at booking time
+
+  // Financial amounts in integer sen
+  servicePriceSen: number;
+  markupSen: number;
+  customerTotalSen: number;
+  platformFeeSen: number;
+  shopPayoutSen: number;
+
+  // Snapshot price in sen for display compatibility
+  price: number;
+
   status: BookingStatus;
   paymentMethod: PaymentMethod;
+  paymentStatus: PaymentStatus;
+
   createdAt: string; // ISO
   updatedAt: string; // ISO
 }

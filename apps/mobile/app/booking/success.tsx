@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, radius, shadow } from '@/theme';
 import { useLanguage } from '@/i18n';
+import { formatSen } from '@cutmyhair/shared';
 
 export default function BookingSuccessScreen() {
   const { shopName, serviceName, barberName, dateTime, price } =
@@ -42,7 +43,7 @@ export default function BookingSuccessScreen() {
     { icon: 'person-outline', label: t('booking.barberLabel'), value: barberName ?? '' },
     { icon: 'calendar-outline', label: t('booking.dateLabel'), value: dateStr },
     { icon: 'time-outline', label: t('booking.timeLabel'), value: timeStr },
-    { icon: 'cash-outline', label: t('booking.priceLabel'), value: `RM ${Number(price ?? 0).toFixed(0)}` },
+    { icon: 'cash-outline', label: t('booking.priceLabel'), value: formatSen(Number(price ?? 0)) },
   ];
 
   return (

@@ -15,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, radius, shadow } from '@/theme';
 import { useLanguage } from '@/i18n';
 import { api } from '@/api';
-import type { Shop, Service, Barber, Review } from '@cutmyhair/shared';
+import { formatSen, type Shop, type Service, type Barber, type Review } from '@cutmyhair/shared';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -354,7 +354,7 @@ export default function ShopDetailScreen() {
                         {svc.durationMinutes} {t('shopDetail.min')}
                       </Text>
                     </View>
-                    <Text style={styles.servicePrice}>{`RM ${svc.price}`}</Text>
+                    <Text style={styles.servicePrice}>{formatSen(svc.price)}</Text>
                   </View>
                 ))}
               </View>
@@ -428,7 +428,7 @@ export default function ShopDetailScreen() {
             activeOpacity={0.85}
             onPress={() =>
               router.push({
-                pathname: '/booking/[shopId]' as any,
+                pathname: '/booking/new/[shopId]' as any,
                 params: { shopId: shop.id, shopName: shop.name },
               })
             }

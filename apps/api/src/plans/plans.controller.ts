@@ -1,15 +1,12 @@
 import { Controller, Get } from '@nestjs/common';
+import { PLAN_LIST } from '@cutmyhair/shared';
 
 @Controller('plans')
 export class PlansController {
   @Get()
-  stub() {
+  getPlans() {
     return {
-      plans: [
-        { id: 'base', name: 'Base', priceMonthly: 29, currency: 'MYR' },
-        { id: 'pro', name: 'Pro', priceMonthly: 49, currency: 'MYR' },
-      ],
-      status: 'Plan management coming soon.',
+      plans: PLAN_LIST,
     };
   }
 }

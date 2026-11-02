@@ -16,7 +16,7 @@
     "incremental": true,
     "plugins": [{ "name": "next" }],
     "paths": {
-      "@cutmyhair/shared": ["../../packages/shared/src/index.ts"],
+      "@cutmyhair/shared": ["../../packages/shared/dist/index.d.ts"],
       "@/*": ["./src/*"]
     }
   },

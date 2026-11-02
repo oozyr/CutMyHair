@@ -6,6 +6,7 @@ import {
 import * as crypto from 'crypto';
 import { StoreService } from '../store/store.service';
 import type { Booking, BookingStatus } from '@cutmyhair/shared';
+import { calculateBookingAmounts } from '@cutmyhair/shared';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 
@@ -106,6 +107,7 @@ export class BookingsService {
 
     const id = `bkg-${Date.now()}`;
     const now = new Date().toISOString();
+    const amounts = calculateBookingAmounts(service.price);
     const booking: Booking = {
       id,
       customerId,
@@ -114,9 +116,15 @@ export class BookingsService {
       serviceId,
       startTime: start.toISOString(),
       endTime,
-      price: service.price,
+      servicePriceSen: amounts.servicePriceSen,
+      markupSen: amounts.markupSen,
+      customerTotalSen: amounts.customerTotalSen,
+      platformFeeSen: amounts.platformFeeSen,
+      shopPayoutSen: amounts.shopPayoutSen,
+      price: amounts.customerTotalSen,
       status: 'pending',
-      paymentMethod: 'pay_at_shop',
+      paymentMethod: (dto as any).paymentMethod || 'fpx',
+      paymentStatus: 'pending',
       createdAt: now,
       updatedAt: now,
     };

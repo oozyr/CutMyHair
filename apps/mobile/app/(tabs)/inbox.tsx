@@ -20,7 +20,7 @@ import { useLanguage } from '@/i18n';
 import { api, type AppNotification } from '@/api';
 import { DEMO_CUSTOMER } from '@/config/demoCustomer';
 import { useNotifications } from '@/context/NotificationContext';
-import type { Booking, Shop, Barber, Service } from '@cutmyhair/shared';
+import { formatSen, type Booking, type Shop, type Barber, type Service } from '@cutmyhair/shared';
 import { formatSlotTime } from '@/components/DateTimeSlotPicker';
 
 type InboxTab = 'upcoming' | 'completed' | 'notifications';
@@ -402,7 +402,7 @@ export default function InboxScreen() {
                       style={styles.bookingCard}
                       onPress={() =>
                         router.push({
-                          pathname: '/booking/[id]' as any,
+                          pathname: '/booking/detail/[id]' as any,
                           params: { id: b.id },
                         })
                       }
@@ -439,7 +439,7 @@ export default function InboxScreen() {
                             {dateStr} • {timeRange}
                           </Text>
                         </View>
-                        <Text style={styles.cardPrice}>RM {b.price.toFixed(0)}</Text>
+                        <Text style={styles.cardPrice}>{formatSen(b.price)}</Text>
                       </View>
                     </TouchableOpacity>
                   );
@@ -531,7 +531,7 @@ export default function InboxScreen() {
                             {dateStr} • {timeRange}
                           </Text>
                         </View>
-                        <Text style={styles.cardPrice}>RM {b.price.toFixed(0)}</Text>
+                        <Text style={styles.cardPrice}>{formatSen(b.price)}</Text>
                       </View>
 
                       {/* Review Action Row */}

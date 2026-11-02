@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, radius, shadow } from '@/theme';
 import { useLanguage } from '@/i18n';
 import { api, type ShopWithDistance } from '@/api';
+import { formatSen } from '@cutmyhair/shared';
 
 const CHERAS_LAT = 3.139;
 const CHERAS_LNG = 101.6869;
@@ -181,7 +182,7 @@ export default function HomeScreen() {
                         </Text>
                         {shop.minPrice != null && shop.maxPrice != null && (
                           <Text style={styles.priceRangeText}>
-                            {`RM${shop.minPrice} - RM${shop.maxPrice}`}
+                            {`${formatSen(shop.minPrice)} - ${formatSen(shop.maxPrice)}`}
                           </Text>
                         )}
                         {shop.distanceKm !== undefined && (
@@ -258,7 +259,7 @@ export default function HomeScreen() {
                         </Text>
                         {shop.minPrice != null && shop.maxPrice != null && (
                           <Text style={styles.gridPriceRangeText}>
-                            {`RM${shop.minPrice} - RM${shop.maxPrice}`}
+                            {`${formatSen(shop.minPrice)} - ${formatSen(shop.maxPrice)}`}
                           </Text>
                         )}
                         {shop.distanceKm !== undefined && (

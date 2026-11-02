@@ -1,4 +1,14 @@
-export type ShopPlan = 'base' | 'pro';
+import type { PlanId } from '../plans';
+
+export type ShopPlan = PlanId;
+
+export type VerificationStatus = 'unverified' | 'pending' | 'verified';
+
+export interface ShopPayoutDetails {
+  bankName: string;
+  accountHolder: string;
+  accountNumber: string;
+}
 
 export interface Break {
   startTime: string; // "HH:MM" 24h
@@ -25,7 +35,18 @@ export interface Shop {
   photos: string[];        // URLs or placeholder keys
   coverPhoto: string;
   description: string;
-  plan: ShopPlan;
+
+  planId: PlanId;
+  plan?: PlanId;           // Alias for backward compatibility
+  isDemo: boolean;
+
+  verificationStatus?: VerificationStatus;
+  ownerName?: string;
+  ownerPhone?: string;
+  ownerEmail?: string;
+  ssmNumber?: string;
+  payoutDetails?: ShopPayoutDetails;
+
   isActive: boolean;
   openingHours: WeeklyHours;
   rating: number;
